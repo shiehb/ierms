@@ -1,176 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
-import { createPortal } from 'react-dom';
-import { CheckCircle, XCircle, AlertCircle, Info, X, Bell } from 'lucide-react';
-
-// Notification types
-const NOTIFICATION_TYPES = {
-  SUCCESS: 'success',
-  ERROR: 'error',
-  WARNING: 'warning',
-  INFO: 'info',
-  PASSWORD_CHANGE: 'password_change',
-  LOGIN: 'login',
-  SYSTEM: 'system'
-};
-
-// Notification manager class
-class NotificationManager {
-  constructor() {
-    this.notifications = [];
-    this.listeners = [];
-    this.nextId = 1;
-    this.debounceMap = new Map(); // Track debounced notifications
-  }
-
-  // Add notification
-  add(notification) {
-    // Check for duplicate notifications (same type, title, and message)
-    const isDuplicate = this.notifications.some(existing => 
-      existing.type === (notification.type || NOTIFICATION_TYPES.INFO) &&
-      existing.title === (notification.title || '') &&
-      existing.message === (notification.message || '') &&
-      (Date.now() - existing.timestamp.getTime()) < 1000 // Within last second
-    );
-
-    if (isDuplicate) {
-      console.log('Duplicate notification prevented:', notification);
-      return null;
-    }
-
-    const id = this.nextId++;
-    const newNotification = {
-      id,
-      type: notification.type || NOTIFICATION_TYPES.INFO,
-      title: notification.title || '',
-      message: notification.message || '',
-      duration: notification.duration || 5000,
-      persistent: notification.persistent || false,
-      actions: notification.actions || [],
-      timestamp: new Date(),
-      ...notification
-    };
-
-    this.notifications.push(newNotification);
-    this.notifyListeners();
-
-    // Auto-remove after duration (unless persistent)
-    if (!newNotification.persistent && newNotification.duration > 0) {
-      setTimeout(() => {
-        this.remove(id);
-      }, newNotification.duration);
-    }
-
-    return id;
-  }
-
-  // Add notification with debouncing
-  addDebounced(notification, debounceMs = 1000) {
-    const key = `${notification.type || NOTIFICATION_TYPES.INFO}-${notification.title || ''}-${notification.message || ''}`;
-    
-    // Clear existing timeout for this key
-    if (this.debounceMap.has(key)) {
-      clearTimeout(this.debounceMap.get(key));
-    }
-    
-    // Set new timeout
-    const timeoutId = setTimeout(() => {
-      this.add(notification);
-      this.debounceMap.delete(key);
-    }, debounceMs);
-    
-    this.debounceMap.set(key, timeoutId);
-  }
-
-  // Remove notification
-  remove(id) {
-    this.notifications = this.notifications.filter(n => n.id !== id);
-    this.notifyListeners();
-  }
-
-  // Clear all notifications
-  clear() {
-    this.notifications = [];
-    this.notifyListeners();
-  }
-
-  // Subscribe to changes
-  subscribe(listener) {
-    this.listeners.push(listener);
-    return () => {
-      this.listeners = this.listeners.filter(l => l !== listener);
-    };
-  }
-
-  // Notify all listeners
-  notifyListeners() {
-    this.listeners.forEach(listener => listener([...this.notifications]));
-  }
-
-  // Convenience methods
-  success(message, options = {}) {
-    return this.add({
-      type: NOTIFICATION_TYPES.SUCCESS,
-      message,
-      ...options
-    });
-  }
-
-  error(message, options = {}) {
-    return this.add({
-      type: NOTIFICATION_TYPES.ERROR,
-      message,
-      duration: 8000, // Longer duration for errors
-      ...options
-    });
-  }
-
-  warning(message, options = {}) {
-    return this.add({
-      type: NOTIFICATION_TYPES.WARNING,
-      message,
-      ...options
-    });
-  }
-
-  info(message, options = {}) {
-    return this.add({
-      type: NOTIFICATION_TYPES.INFO,
-      message,
-      ...options
-    });
-  }
-
-  passwordChange(message, options = {}) {
-    return this.add({
-      type: NOTIFICATION_TYPES.PASSWORD_CHANGE,
-      title: 'Password Change',
-      message,
-      duration: 6000,
-      ...options
-    });
-  }
-
-  login(message, options = {}) {
-    return this.add({
-      type: NOTIFICATION_TYPES.LOGIN,
-      title: 'Login',
-      message,
-      ...options
-    });
-  }
-
-  system(message, options = {}) {
-    return this.add({
-      type: NOTIFICATION_TYPES.SYSTEM,
-      title: 'System',
-      message,
-      ...options
-    });
-  }
-}
-
-// Global notification manager instance
-const notificationManager = new NotificationManager();
+import { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
+import { CheckCircle, XCircle, AlertCircle, Info, X, Bell } from "lucide-react";
+import { NOTIFICATION_TYPES } from "../constants/notificationConstants";
+import { notificationManager } from "../utils/notificationManager";
 
 // Professional notification component
 function ProfessionalNotification({ notification, onClose }) {
@@ -180,18 +12,23 @@ function ProfessionalNotification({ notification, onClose }) {
   useEffect(() => {
     if (!notification.persistent && notification.duration > 0) {
       const interval = setInterval(() => {
-        setProgress(prev => {
+        setProgress((prev) => {
           if (prev <= 0) {
             setIsVisible(false);
             setTimeout(() => onClose(notification.id), 300);
             return 0;
           }
-          return prev - (100 / (notification.duration / 50));
+          return prev - 100 / (notification.duration / 50);
         });
       }, 50);
       return () => clearInterval(interval);
     }
-  }, [notification.id, notification.duration, notification.persistent, onClose]);
+  }, [
+    notification.id,
+    notification.duration,
+    notification.persistent,
+    onClose,
+  ]);
 
   const getIcon = (type) => {
     switch (type) {
@@ -218,51 +55,51 @@ function ProfessionalNotification({ notification, onClose }) {
     switch (type) {
       case NOTIFICATION_TYPES.SUCCESS:
         return {
-          bg: 'bg-green-50 border-green-200',
-          text: 'text-green-800',
-          title: 'text-green-900'
+          bg: "bg-green-50 border-green-200",
+          text: "text-green-800",
+          title: "text-green-900",
         };
       case NOTIFICATION_TYPES.ERROR:
         return {
-          bg: 'bg-red-50 border-red-200',
-          text: 'text-red-800',
-          title: 'text-red-900'
+          bg: "bg-red-50 border-red-200",
+          text: "text-red-800",
+          title: "text-red-900",
         };
       case NOTIFICATION_TYPES.WARNING:
         return {
-          bg: 'bg-amber-50 border-amber-200',
-          text: 'text-amber-800',
-          title: 'text-amber-900'
+          bg: "bg-amber-50 border-amber-200",
+          text: "text-amber-800",
+          title: "text-amber-900",
         };
       case NOTIFICATION_TYPES.INFO:
         return {
-          bg: 'bg-blue-50 border-blue-200',
-          text: 'text-blue-800',
-          title: 'text-blue-900'
+          bg: "bg-blue-50 border-blue-200",
+          text: "text-blue-800",
+          title: "text-blue-900",
         };
       case NOTIFICATION_TYPES.PASSWORD_CHANGE:
         return {
-          bg: 'bg-purple-50 border-purple-200',
-          text: 'text-purple-800',
-          title: 'text-purple-900'
+          bg: "bg-purple-50 border-purple-200",
+          text: "text-purple-800",
+          title: "text-purple-900",
         };
       case NOTIFICATION_TYPES.LOGIN:
         return {
-          bg: 'bg-indigo-50 border-indigo-200',
-          text: 'text-indigo-800',
-          title: 'text-indigo-900'
+          bg: "bg-indigo-50 border-indigo-200",
+          text: "text-indigo-800",
+          title: "text-indigo-900",
         };
       case NOTIFICATION_TYPES.SYSTEM:
         return {
-          bg: 'bg-gray-50 border-gray-200',
-          text: 'text-gray-800',
-          title: 'text-gray-900'
+          bg: "bg-gray-50 border-gray-200",
+          text: "text-gray-800",
+          title: "text-gray-900",
         };
       default:
         return {
-          bg: 'bg-blue-50 border-blue-200',
-          text: 'text-blue-800',
-          title: 'text-blue-900'
+          bg: "bg-blue-50 border-blue-200",
+          text: "text-blue-800",
+          title: "text-blue-900",
         };
     }
   };
@@ -285,13 +122,13 @@ function ProfessionalNotification({ notification, onClose }) {
       {/* Progress bar */}
       {!notification.persistent && notification.duration > 0 && (
         <div className="absolute top-0 left-0 w-full h-1 bg-black/10 rounded-t-lg overflow-hidden">
-          <div 
+          <div
             className="h-full bg-current opacity-30 transition-all duration-50"
             style={{ width: `${progress}%` }}
           />
         </div>
       )}
-      
+
       <div className="flex-shrink-0">{getIcon(notification.type)}</div>
       <div className="ml-3 flex-1 min-w-0">
         {notification.title && (
@@ -310,8 +147,8 @@ function ProfessionalNotification({ notification, onClose }) {
                 onClick={action.onClick}
                 className={`text-xs font-medium px-3 py-1 rounded-md transition-colors ${
                   action.primary
-                    ? 'bg-white text-gray-700 hover:bg-gray-100'
-                    : 'text-gray-600 hover:text-gray-800'
+                    ? "bg-white text-gray-700 hover:bg-gray-100"
+                    : "text-gray-600 hover:text-gray-800"
                 }`}
               >
                 {action.label}
@@ -360,36 +197,4 @@ function NotificationContainer() {
   );
 }
 
-// Hook for using notifications
-export function useNotifications() {
-  return {
-    success: notificationManager.success.bind(notificationManager),
-    error: (message, options = {}) => {
-      // Use debounced error notifications to prevent spam
-      notificationManager.addDebounced({
-        type: NOTIFICATION_TYPES.ERROR,
-        message,
-        duration: 8000,
-        ...options
-      }, 2000); // 2 second debounce for errors
-    },
-    warning: notificationManager.warning.bind(notificationManager),
-    info: notificationManager.info.bind(notificationManager),
-    passwordChange: notificationManager.passwordChange.bind(notificationManager),
-    login: notificationManager.login.bind(notificationManager),
-    system: notificationManager.system.bind(notificationManager),
-    add: notificationManager.add.bind(notificationManager),
-    addDebounced: notificationManager.addDebounced.bind(notificationManager),
-    remove: notificationManager.remove.bind(notificationManager),
-    clear: notificationManager.clear.bind(notificationManager)
-  };
-}
-
-// Global notification functions for backward compatibility
-export const showNotification = (type, message, options = {}) => {
-  return notificationManager.add({ type, message, ...options });
-};
-
-// Export the notification manager and container
-export { notificationManager, NotificationContainer, NOTIFICATION_TYPES };
 export default NotificationContainer;

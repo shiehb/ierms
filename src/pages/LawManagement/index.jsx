@@ -6,7 +6,7 @@ import LawList from "../../components/laws/LawList";
 import AddLawModal from "../../components/laws/AddLawModal";
 import EditLawModal from "../../components/laws/EditLawModal";
 import LawDetailsModal from "../../components/laws/LawDetailsModal";
-import { useNotifications } from "../../components/NotificationManager";
+import { useNotifications } from "../../hooks/useNotifications";
 import * as lawApi from "../../services/lawApi";
 
 export default function LawManagement() {
@@ -53,7 +53,9 @@ export default function LawManagement() {
         prev.map((law) => (law.id === lawId ? updatedLaw : law))
       );
       notifications.success(
-        `Law ${nextStatus === "Active" ? "activated" : "deactivated"} successfully.`,
+        `Law ${
+          nextStatus === "Active" ? "activated" : "deactivated"
+        } successfully.`,
         {
           title: "Status Updated",
           duration: 3000,
@@ -137,5 +139,3 @@ export default function LawManagement() {
     </>
   );
 }
-
-

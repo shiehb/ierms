@@ -4,7 +4,7 @@ import ConfirmationDialog from "../common/ConfirmationDialog";
 import TableToolbar from "../common/TableToolbar";
 import PaginationControls from "../PaginationControls";
 import { useLocalStoragePagination } from "../../hooks/useLocalStoragePagination";
-import { useNotifications } from "../NotificationManager";
+import { useNotifications } from "../../hooks/useNotifications";
 
 export default function LawList({
   laws = [],
@@ -38,9 +38,7 @@ export default function LawList({
         !search ||
         [law.law_title, law.reference_code, law.description]
           .filter(Boolean)
-          .some((value) =>
-            value.toLowerCase().includes(search.toLowerCase())
-          );
+          .some((value) => value.toLowerCase().includes(search.toLowerCase()));
 
       return matchesSearch;
     });
@@ -77,10 +75,7 @@ export default function LawList({
   }, [filteredLaws, sortConfig]);
 
   const totalFiltered = filteredAndSortedLaws.length;
-  const totalPages = Math.max(
-    1,
-    Math.ceil(totalFiltered / pageSize) || 1
-  );
+  const totalPages = Math.max(1, Math.ceil(totalFiltered / pageSize) || 1);
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedLaws = filteredAndSortedLaws.slice(
     startIndex,
@@ -165,7 +160,9 @@ export default function LawList({
     try {
       await Promise.resolve(onStatusChange?.(lawId, nextStatus));
       notifications.success(
-        `Law ${nextStatus === "Active" ? "activated" : "deactivated"} successfully.`,
+        `Law ${
+          nextStatus === "Active" ? "activated" : "deactivated"
+        } successfully.`,
         {
           title: "Status Updated",
           duration: 3000,
@@ -202,12 +199,9 @@ export default function LawList({
   };
 
   const totalItems = laws.length;
-  const startItem =
-    totalFiltered === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const startItem = totalFiltered === 0 ? 0 : (currentPage - 1) * pageSize + 1;
   const endItem =
-    totalFiltered === 0
-      ? 0
-      : Math.min(currentPage * pageSize, totalFiltered);
+    totalFiltered === 0 ? 0 : Math.min(currentPage * pageSize, totalFiltered);
   const hasActiveFilters = Boolean(search);
 
   return (
@@ -290,22 +284,26 @@ export default function LawList({
                       }
                     />
                   </th>
-                  {["Law", "Category", "Effective Date", "Status", "Actions"].map(
-                    (label, index) => (
-                      <th
-                        key={label}
-                        className={`px-3 py-2 border-b border-sky-500/50 ${
-                          index === 2
-                            ? "text-left"
-                            : index === 3
-                            ? "text-center"
-                            : ""
-                        }`}
-                      >
-                        {label}
-                      </th>
-                    )
-                  )}
+                  {[
+                    "Law",
+                    "Category",
+                    "Effective Date",
+                    "Status",
+                    "Actions",
+                  ].map((label, index) => (
+                    <th
+                      key={label}
+                      className={`px-3 py-2 border-b border-sky-500/50 ${
+                        index === 2
+                          ? "text-left"
+                          : index === 3
+                          ? "text-center"
+                          : ""
+                      }`}
+                    >
+                      {label}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
@@ -381,7 +379,6 @@ export default function LawList({
                           onToggle={() => openStatusDialog(law)}
                         />
                       </td>
-                      
                     </tr>
                   );
                 })}
@@ -424,7 +421,9 @@ export default function LawList({
                 <span className="font-semibold text-slate-800">
                   {statusDialog.law.law_title}
                 </span>{" "}
-                as <span className="font-semibold">{statusDialog.nextStatus}</span>.
+                as{" "}
+                <span className="font-semibold">{statusDialog.nextStatus}</span>
+                .
               </p>
               <p className="text-slate-500">
                 This affects its availability in inspection forms and reports.
@@ -513,5 +512,3 @@ function LawActionButtons({ law, onView, onEdit, onToggle }) {
     </div>
   );
 }
-
-

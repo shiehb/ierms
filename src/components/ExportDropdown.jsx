@@ -1,14 +1,14 @@
 import { useState, useRef } from "react";
-import { 
-  Download, 
-  FileText, 
-  FileSpreadsheet, 
+import {
+  Download,
+  FileText,
+  FileSpreadsheet,
   ChevronDown,
-  Check
+  Check,
 } from "lucide-react";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import { useNotifications } from "./NotificationManager";
+import { useNotifications } from "../hooks/useNotifications";
 
 // Helper function to load images as base64
 const loadImageAsBase64 = async (imagePath) => {
@@ -22,7 +22,7 @@ const loadImageAsBase64 = async (imagePath) => {
       reader.readAsDataURL(blob);
     });
   } catch (error) {
-    console.error('Error loading image:', error);
+    console.error("Error loading image:", error);
     return null;
   }
 };
@@ -30,19 +30,19 @@ const loadImageAsBase64 = async (imagePath) => {
 // Export format options
 const EXPORT_FORMATS = [
   {
-    id: 'csv',
-    name: 'CSV',
+    id: "csv",
+    name: "CSV",
     icon: FileSpreadsheet,
-    description: 'Comma Separated Values',
-    color: 'text-green-600'
+    description: "Comma Separated Values",
+    color: "text-green-600",
   },
   {
-    id: 'pdf',
-    name: 'PDF',
+    id: "pdf",
+    name: "PDF",
     icon: FileText,
-    description: 'Portable Document Format',
-    color: 'text-red-600'
-  }
+    description: "Portable Document Format",
+    color: "text-red-600",
+  },
 ];
 
 export default function ExportDropdown({
@@ -52,7 +52,7 @@ export default function ExportDropdown({
   rows,
   customPdfGenerator,
   className = "",
-  disabled = false
+  disabled = false,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedFormat, setSelectedFormat] = useState(null);
@@ -70,10 +70,9 @@ export default function ExportDropdown({
 
   // Add event listener for outside clicks
   useState(() => {
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   });
-
 
   // CSV Export
   const handleExportCSV = () => {
@@ -92,21 +91,15 @@ export default function ExportDropdown({
       link.click();
       document.body.removeChild(link);
 
-      notifications.success(
-        "CSV file exported successfully!",
-        {
-          title: "Export Complete",
-          duration: 4000
-        }
-      );
+      notifications.success("CSV file exported successfully!", {
+        title: "Export Complete",
+        duration: 4000,
+      });
     } catch {
-      notifications.error(
-        "Failed to export CSV file",
-        {
-          title: "Export Failed",
-          duration: 6000
-        }
-      );
+      notifications.error("Failed to export CSV file", {
+        title: "Export Failed",
+        duration: 6000,
+      });
     }
   };
 
@@ -130,7 +123,7 @@ export default function ExportDropdown({
         const pageWidth = doc.internal.pageSize.getWidth();
         const safeDate = new Date().toISOString().split("T")[0];
         const exportId = `RPT-${Date.now()}`;
-        
+
         doc.setFontSize(8);
         doc.setFont("times", "bold");
         doc.text(`${exportId}`, pageWidth - 10, 10, { align: "right" });
@@ -138,29 +131,44 @@ export default function ExportDropdown({
         doc.setFont("times", "normal");
 
         // Load and add logos
-        const logo1Data = await loadImageAsBase64('/assets/document/logo1.png');
-        const logo2Data = await loadImageAsBase64('/assets/document/logo2.png');
-        
+        const logo1Data = await loadImageAsBase64("/assets/document/logo1.png");
+        const logo2Data = await loadImageAsBase64("/assets/document/logo2.png");
+
         const logoWidth = 20; // mm
         const logoHeight = 20; // mm
         const logoY = 17; // Y position for logos
-        
+
         // Calculate title text width to position logos closer
-        const titleText = "Integrated Establishment Regulatory Management System";
+        const titleText =
+          "Integrated Establishment Regulatory Management System";
         const titleTextWidth = doc.getTextWidth(titleText);
-        
+
         // Position logos with more spacing from the title text
-        const leftLogoX = (pageWidth / 2) - (titleTextWidth / 2) - logoWidth - 30; // 10mm gap
-        const rightLogoX = (pageWidth / 2) + (titleTextWidth / 2) + 30; // 10mm gap
-        
+        const leftLogoX = pageWidth / 2 - titleTextWidth / 2 - logoWidth - 30; // 10mm gap
+        const rightLogoX = pageWidth / 2 + titleTextWidth / 2 + 30; // 10mm gap
+
         // Add logo1 on the left (closer to title)
         if (logo1Data) {
-          doc.addImage(logo1Data, 'PNG', leftLogoX, logoY, logoWidth, logoHeight);
+          doc.addImage(
+            logo1Data,
+            "PNG",
+            leftLogoX,
+            logoY,
+            logoWidth,
+            logoHeight
+          );
         }
-        
+
         // Add logo2 on the right (closer to title)
         if (logo2Data) {
-          doc.addImage(logo2Data, 'PNG', rightLogoX, logoY, logoWidth, logoHeight);
+          doc.addImage(
+            logo2Data,
+            "PNG",
+            rightLogoX,
+            logoY,
+            logoWidth,
+            logoHeight
+          );
         }
 
         // Header text (centered)
@@ -186,7 +194,7 @@ export default function ExportDropdown({
         );
 
         // add line here up to 70 mm
-        
+
         // Report title
         doc.setFont("times", "bold");
         doc.setFontSize(12);
@@ -245,26 +253,19 @@ export default function ExportDropdown({
       const blobUrl = doc.output("bloburl");
       window.open(blobUrl, "_blank");
 
-      notifications.success(
-        "PDF file generated successfully!",
-        {
-          title: "Export Complete",
-          duration: 4000
-        }
-      );
+      notifications.success("PDF file generated successfully!", {
+        title: "Export Complete",
+        duration: 4000,
+      });
     } catch {
-      notifications.error(
-        "Failed to generate PDF file",
-        {
-          title: "Export Failed",
-          duration: 6000
-        }
-      );
+      notifications.error("Failed to generate PDF file", {
+        title: "Export Failed",
+        duration: 6000,
+      });
     } finally {
       setIsExporting(false);
     }
   };
-
 
   // Handle format selection
   const handleFormatSelect = (format) => {
@@ -279,23 +280,22 @@ export default function ExportDropdown({
 
     try {
       switch (selectedFormat.id) {
-        case 'csv':
+        case "csv":
           handleExportCSV();
           break;
-        case 'pdf':
+        case "pdf":
           await handleExportPDF();
           break;
         default:
           break;
       }
     } catch (err) {
-      console.error('Export error:', err);
+      console.error("Export error:", err);
     } finally {
       setSelectedFormat(null);
       setShowConfirmation(false);
     }
   };
-
 
   return (
     <>
@@ -308,12 +308,15 @@ export default function ExportDropdown({
             flex items-center px-3 py-1 text-sm font-medium rounded
             text-gray-700 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-400 disabled:cursor-not-allowed
             transition-colors duration-200
-            ${isExporting ? 'opacity-75' : ''}
+            ${isExporting ? "opacity-75" : ""}
           `}
         >
           <Download size={16} />
-          {isExporting ? 'Exporting...' : 'Export'}
-          <ChevronDown size={14} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          {isExporting ? "Exporting..." : "Export"}
+          <ChevronDown
+            size={14}
+            className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
+          />
         </button>
 
         {/* Dropdown Menu */}
@@ -323,7 +326,7 @@ export default function ExportDropdown({
               <div className="px-3 py-2 text-xs font-semibold text-sky-600 uppercase tracking-wide">
                 Export Format
               </div>
-              
+
               {/* Export Options */}
               {EXPORT_FORMATS.map((format) => {
                 const IconComponent = format.icon;
@@ -336,12 +339,13 @@ export default function ExportDropdown({
                     <IconComponent size={16} className={format.color} />
                     <div className="flex-1 text-left">
                       <div className="font-medium">{format.name}</div>
-                      <div className="text-xs text-gray-500">{format.description}</div>
+                      <div className="text-xs text-gray-500">
+                        {format.description}
+                      </div>
                     </div>
                   </button>
                 );
               })}
-
             </div>
           </div>
         )}
@@ -365,9 +369,15 @@ export default function ExportDropdown({
 
             <div className="mb-4 p-3 bg-gray-50 rounded-lg">
               <div className="text-sm text-gray-700">
-                <div><strong>Title:</strong> {title}</div>
-                <div><strong>File:</strong> {fileName}.{selectedFormat.id}</div>
-                <div><strong>Records:</strong> {rows.length} rows</div>
+                <div>
+                  <strong>Title:</strong> {title}
+                </div>
+                <div>
+                  <strong>File:</strong> {fileName}.{selectedFormat.id}
+                </div>
+                <div>
+                  <strong>Records:</strong> {rows.length} rows
+                </div>
               </div>
             </div>
 

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import Layout from "../components/Layout";
 import { firstTimeChangePassword, logoutUser } from "../services/api";
-import { useNotifications } from "../components/NotificationManager";
+import { useNotifications } from "../hooks/useNotifications";
 import PasswordRequirements from "../components/common/PasswordRequirements";
 
 export default function ForceChangePassword() {
@@ -47,12 +47,21 @@ export default function ForceChangePassword() {
       // Combined validation checks
       if (formData.newPassword.length < 8) {
         newErrors.newPassword = "Password must be at least 8 characters long";
-      } else if (!/(?=.*[a-z])/.test(formData.newPassword) || !/(?=.*[A-Z])/.test(formData.newPassword)) {
-        newErrors.newPassword = "Password must include both lowercase and uppercase character";
-      } else if (!/(?=.*\d)/.test(formData.newPassword) && !/(?=.*[@$!%*?&])/.test(formData.newPassword)) {
-        newErrors.newPassword = "Password must include at least one number or symbol";
+      } else if (
+        !/(?=.*[a-z])/.test(formData.newPassword) ||
+        !/(?=.*[A-Z])/.test(formData.newPassword)
+      ) {
+        newErrors.newPassword =
+          "Password must include both lowercase and uppercase character";
+      } else if (
+        !/(?=.*\d)/.test(formData.newPassword) &&
+        !/(?=.*[@$!%*?&])/.test(formData.newPassword)
+      ) {
+        newErrors.newPassword =
+          "Password must include at least one number or symbol";
       } else if (formData.newPassword === formData.oldPassword) {
-        newErrors.newPassword = "New password cannot be the same as old password";
+        newErrors.newPassword =
+          "New password cannot be the same as old password";
       }
     }
 
@@ -72,14 +81,17 @@ export default function ForceChangePassword() {
     if (validateForm()) {
       setIsSubmitting(true);
       try {
-        await firstTimeChangePassword(formData.oldPassword, formData.newPassword);
+        await firstTimeChangePassword(
+          formData.oldPassword,
+          formData.newPassword
+        );
 
         // Show success notification
         notifications.passwordChange(
           "Password changed successfully! You will be logged out for security.",
           {
             title: "Password Change Successful",
-            duration: 3000
+            duration: 3000,
           }
         );
 
@@ -104,8 +116,9 @@ export default function ForceChangePassword() {
         setTimeout(() => {
           navigate("/login", {
             state: {
-              message: "Password changed successfully! Please login with your new password."
-            }
+              message:
+                "Password changed successfully! Please login with your new password.",
+            },
           });
         }, 2000);
       } catch (err) {
@@ -116,13 +129,10 @@ export default function ForceChangePassword() {
           "Failed to change password.";
 
         // Show error notification
-        notifications.error(
-          errorMessage,
-          {
-            title: "Password Change Failed",
-            duration: 8000
-          }
-        );
+        notifications.error(errorMessage, {
+          title: "Password Change Failed",
+          duration: 8000,
+        });
 
         setErrors({
           submit: errorMessage,
@@ -235,7 +245,9 @@ export default function ForceChangePassword() {
               />
               <button
                 type="button"
-                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                aria-label={
+                  showConfirmPassword ? "Hide password" : "Show password"
+                }
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 className="absolute inset-y-0 flex items-center h-full text-gray-500 bg-transparent right-3 hover:text-sky-600"
               >
@@ -262,9 +274,7 @@ export default function ForceChangePassword() {
           </button>
         </form>
 
-        <PasswordRequirements 
-          password={formData.newPassword}
-        />
+        <PasswordRequirements password={formData.newPassword} />
       </div>
     </Layout>
   );

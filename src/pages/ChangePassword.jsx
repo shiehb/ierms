@@ -5,7 +5,7 @@ import Layout from "../components/Layout";
 import { changePassword, logoutUser } from "../services/api";
 import { useNavigate } from "react-router-dom";
 import ConfirmationDialog from "../components/common/ConfirmationDialog";
-import { useNotifications } from "../components/NotificationManager";
+import { useNotifications } from "../hooks/useNotifications";
 import PasswordRequirements from "../components/common/PasswordRequirements";
 
 export default function ChangePassword() {
@@ -49,12 +49,21 @@ export default function ChangePassword() {
       // Combined validation checks
       if (formData.newPassword.length < 8) {
         newErrors.newPassword = "Password must be at least 8 characters long";
-      } else if (!/(?=.*[a-z])/.test(formData.newPassword) || !/(?=.*[A-Z])/.test(formData.newPassword)) {
-        newErrors.newPassword = "Password must include both lowercase and uppercase character";
-      } else if (!/(?=.*\d)/.test(formData.newPassword) && !/(?=.*[@$!%*?&])/.test(formData.newPassword)) {
-        newErrors.newPassword = "Password must include at least one number or symbol";
+      } else if (
+        !/(?=.*[a-z])/.test(formData.newPassword) ||
+        !/(?=.*[A-Z])/.test(formData.newPassword)
+      ) {
+        newErrors.newPassword =
+          "Password must include both lowercase and uppercase character";
+      } else if (
+        !/(?=.*\d)/.test(formData.newPassword) &&
+        !/(?=.*[@$!%*?&])/.test(formData.newPassword)
+      ) {
+        newErrors.newPassword =
+          "Password must include at least one number or symbol";
       } else if (formData.newPassword === formData.oldPassword) {
-        newErrors.newPassword = "New password cannot be the same as old password";
+        newErrors.newPassword =
+          "New password cannot be the same as old password";
       }
     }
 
@@ -86,7 +95,7 @@ export default function ChangePassword() {
         "Password changed successfully! You will be logged out for security.",
         {
           title: "Password Change Successful",
-          duration: 3000
+          duration: 3000,
         }
       );
 
@@ -118,8 +127,9 @@ export default function ChangePassword() {
       setTimeout(() => {
         navigate("/login", {
           state: {
-            message: "Password changed successfully! Please login with your new password."
-          }
+            message:
+              "Password changed successfully! Please login with your new password.",
+          },
         });
       }, 2000);
     } catch (err) {
@@ -131,13 +141,10 @@ export default function ChangePassword() {
         "Failed to change password. Please try again.";
 
       // Show error notification
-      notifications.error(
-        errorMessage,
-        {
-          title: "Password Change Failed",
-          duration: 8000
-        }
-      );
+      notifications.error(errorMessage, {
+        title: "Password Change Failed",
+        duration: 8000,
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -243,7 +250,9 @@ export default function ChangePassword() {
               />
               <button
                 type="button"
-                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                aria-label={
+                  showConfirmPassword ? "Hide password" : "Show password"
+                }
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 className="absolute inset-y-0 flex items-center h-full text-gray-500 bg-transparent right-3 hover:text-sky-600"
               >
@@ -265,13 +274,13 @@ export default function ChangePassword() {
             <button
               type="button"
               onClick={handleCancel}
-              className="flex-1 py-3 rounded-lg bg-gray-300 text-gray-700 font-medium hover:bg-gray-400 transition"
+              className="flex-1 py-3 font-medium text-gray-700 transition bg-gray-300 rounded-lg hover:bg-gray-400"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex-1 py-3 rounded-lg bg-sky-600 text-white font-medium hover:bg-sky-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="flex-1 py-3 font-medium text-white transition rounded-lg bg-sky-600 hover:bg-sky-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
               disabled={isSubmitting}
             >
               {isSubmitting ? "Changing..." : "Change Password"}
@@ -279,9 +288,7 @@ export default function ChangePassword() {
           </div>
         </form>
 
-        <PasswordRequirements 
-          password={formData.newPassword}
-        />
+        <PasswordRequirements password={formData.newPassword} />
       </div>
 
       <ConfirmationDialog

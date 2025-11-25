@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import User
 from .utils.image_utils import optimize_avatar
 from .signals import user_created_with_password
-from system_config.models import SystemConfiguration
+from core.settings import generate_secure_password
 import logging
 
 logger = logging.getLogger(__name__)

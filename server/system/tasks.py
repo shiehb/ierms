@@ -5,7 +5,6 @@ from datetime import timedelta
 import os
 import subprocess
 import logging
-from system_config.models import SystemConfiguration
 from system.models import BackupRecord
 from system.views import get_db_config, get_mysqldump_path, create_sql_backup_python, BACKUP_DIR
 
@@ -14,12 +13,10 @@ logger = logging.getLogger(__name__)
 
 @shared_task
 def create_scheduled_backup():
-    """Create a scheduled backup based on system configuration"""
+    """Create a scheduled backup with fixed daily schedule"""
     try:
-        config = SystemConfiguration.get_active_config()
-        
-        # Get backup directory from config or use default
-        backup_path = config.backup_custom_path if config.backup_custom_path else BACKUP_DIR
+        # Get backup directory from settings or use default
+        backup_path = BACKUP_DIR
         
         # Create directory if missing
         os.makedirs(backup_path, exist_ok=True)

@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import { useState } from "react";
 import { sendOtp } from "../services/api";
-import { useNotifications } from "../components/NotificationManager";
+import { useNotifications } from "../hooks/useNotifications";
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
@@ -18,13 +18,10 @@ export default function ForgotPassword() {
       const response = await sendOtp(email);
 
       // Show success notification
-      notifications.success(
-        response.detail,
-        {
-          title: "OTP Sent",
-          duration: 4000
-        }
-      );
+      notifications.success(response.detail, {
+        title: "OTP Sent",
+        duration: 4000,
+      });
 
       // ✅ Automatically redirect to reset password page after successful OTP send
       if (response.detail.includes("sent")) {
@@ -38,24 +35,30 @@ export default function ForgotPassword() {
       }
     } catch (error) {
       let errorMessage = "Failed to send OTP. Please try again.";
-      
+
       // Check for different types of errors
-      if (error.code === 'NETWORK_ERROR' || error.message?.includes('Network Error') || !navigator.onLine) {
-        errorMessage = "No internet connection. Please check your network and try again.";
-      } else if (error.response?.status === 0 || error.message?.includes('fetch')) {
-        errorMessage = "Unable to connect to server. Please check your connection and try again.";
+      if (
+        error.code === "NETWORK_ERROR" ||
+        error.message?.includes("Network Error") ||
+        !navigator.onLine
+      ) {
+        errorMessage =
+          "No internet connection. Please check your network and try again.";
+      } else if (
+        error.response?.status === 0 ||
+        error.message?.includes("fetch")
+      ) {
+        errorMessage =
+          "Unable to connect to server. Please check your connection and try again.";
       } else if (error.response?.data?.detail) {
         errorMessage = error.response.data.detail;
       }
-      
+
       // Show error notification
-      notifications.error(
-        errorMessage,
-        {
-          title: "OTP Send Failed",
-          duration: 8000
-        }
-      );
+      notifications.error(errorMessage, {
+        title: "OTP Send Failed",
+        duration: 8000,
+      });
     } finally {
       setLoading(false);
     }
@@ -71,16 +74,16 @@ export default function ForgotPassword() {
         >
           ← Back
         </button>
-        
+
         <h2 className="mb-6 text-2xl font-bold text-center text-sky-600">
           Forgot password
         </h2>
-        
+
         {/* Descriptive text */}
         <p className="mb-6 text-sm text-gray-600 text-center">
-          Enter the email associated with your account, and we will email you a verification code to reset your password
+          Enter the email associated with your account, and we will email you a
+          verification code to reset your password
         </p>
-
 
         <form className="space-y-5" onSubmit={handleSendOtp}>
           <div>

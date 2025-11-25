@@ -17,27 +17,18 @@ import "leaflet.fullscreen";
 import "leaflet.fullscreen/Control.FullScreen.css";
 import L from "leaflet";
 import { getEstablishments, getMyEstablishments } from "../services/api";
-import { useNotifications } from "../components/NotificationManager";
+import { useNotifications } from "../hooks/useNotifications";
 import useAuth from "../hooks/useAuth";
-import { getIconByNatureOfBusiness } from '../constants/markerIcons';
-import { createCustomMarkerIcon } from '../components/map/CustomMarkerIcon';
+import { getIconByNatureOfBusiness } from "../constants/markerIcons";
+import { createCustomMarkerIcon } from "../components/map/CustomMarkerIcon";
 import { ILOCOS_REGION_BOUNDARY } from "../data/ilocosRegionBoundary";
-import {
-  ChevronUp,
-  ChevronDown,
-  ArrowUp,
-  ArrowDown,
-  ChevronLeft,
-  ChevronRight,
-  Building2,
-  X,
-} from "lucide-react";
+import { ArrowUp, ArrowDown, ChevronLeft, ChevronRight } from "lucide-react";
 import TableToolbar from "../components/common/TableToolbar";
 
 // Fix for default markers in react-leaflet
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-import iconRetina from 'leaflet/dist/images/marker-icon-2x.png';
+import icon from "leaflet/dist/images/marker-icon.png";
+import iconShadow from "leaflet/dist/images/marker-shadow.png";
+import iconRetina from "leaflet/dist/images/marker-icon-2x.png";
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -45,7 +36,6 @@ L.Icon.Default.mergeOptions({
   iconUrl: icon,
   shadowUrl: iconShadow,
 });
-
 
 // Debounce hook
 const useDebounce = (value, delay) => {
@@ -101,17 +91,21 @@ export default function MapPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
+  // 🎚 Filters
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [provinceFilter, setProvinceFilter] = useState([]);
+  const [natureOfBusinessFilter, setNatureOfBusinessFilter] = useState([]);
 
   // ✅ Sorting
   const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
 
   // ✅ Pagination - Load from localStorage
   const [currentPage, setCurrentPage] = useState(() => {
-    const saved = localStorage.getItem('map_pagination_page');
+    const saved = localStorage.getItem("map_pagination_page");
     return saved ? parseInt(saved, 10) : 1;
   });
   const [pageSize, setPageSize] = useState(() => {
-    const saved = localStorage.getItem('map_pagination_pageSize');
+    const saved = localStorage.getItem("map_pagination_pageSize");
     return saved ? parseInt(saved, 10) : 10;
   });
 
@@ -120,11 +114,11 @@ export default function MapPage() {
 
   // Save pagination settings to localStorage
   useEffect(() => {
-    localStorage.setItem('map_pagination_page', currentPage.toString());
+    localStorage.setItem("map_pagination_page", currentPage.toString());
   }, [currentPage]);
 
   useEffect(() => {
-    localStorage.setItem('map_pagination_pageSize', pageSize.toString());
+    localStorage.setItem("map_pagination_pageSize", pageSize.toString());
   }, [pageSize]);
 
   // Fetch all establishments from API - only once when user is available
@@ -153,8 +147,10 @@ export default function MapPage() {
     const fetchData = async () => {
       try {
         // Determine which API to call based on user role
-        const isHighLevelUser = user?.userlevel && ['Admin', 'Division Chief', 'Legal Unit'].includes(user.userlevel);
-        
+        const isHighLevelUser =
+          user?.userlevel &&
+          ["Admin", "Division Chief", "Legal Unit"].includes(user.userlevel);
+
         let data;
         if (isHighLevelUser) {
           // High-level users see all establishments
@@ -175,13 +171,10 @@ export default function MapPage() {
         }
       } catch (err) {
         console.error("Error fetching establishments:", err);
-        notificationsRef.current.error(
-          "Error fetching establishments",
-          {
-            title: "Fetch Error",
-            duration: 8000
-          }
-        );
+        notificationsRef.current.error("Error fetching establishments", {
+          title: "Fetch Error",
+          duration: 8000,
+        });
         // Reset hasFetchedRef on error so we can retry
         if (hasFetchedRef.current === userId) {
           hasFetchedRef.current = false;
@@ -197,7 +190,6 @@ export default function MapPage() {
 
     fetchData();
   }, [user]); // Only depend on 'user'
-
 
   // ✅ Sorting handler
   const handleSort = (fieldKey, directionKey = null) => {
@@ -237,7 +229,16 @@ export default function MapPage() {
           String(e.year_established).includes(query)
         : true;
 
-      return matchesSearch;
+      // Apply province filter
+      const matchesProvince =
+        provinceFilter.length === 0 || provinceFilter.includes(e.province);
+
+      // Apply nature of business filter
+      const matchesNatureOfBusiness =
+        natureOfBusinessFilter.length === 0 ||
+        natureOfBusinessFilter.includes(e.nature_of_business);
+
+      return matchesSearch && matchesProvince && matchesNatureOfBusiness;
     });
 
     // Apply sorting
@@ -267,6 +268,8 @@ export default function MapPage() {
     allEstablishments,
     debouncedSearchQuery,
     sortConfig,
+    provinceFilter,
+    natureOfBusinessFilter,
   ]);
 
   // ✅ Pagination
@@ -278,17 +281,47 @@ export default function MapPage() {
 
   const totalPages = Math.ceil(filteredEstablishments.length / pageSize);
 
-  // Filter functions removed as per plan
+  // Toggle province filter checkbox
+  const toggleProvince = (province) =>
+    setProvinceFilter((prev) =>
+      prev.includes(province)
+        ? prev.filter((p) => p !== province)
+        : [...prev, province]
+    );
+
+  // Toggle nature of business filter checkbox
+  const toggleNatureOfBusiness = (business) =>
+    setNatureOfBusinessFilter((prev) =>
+      prev.includes(business)
+        ? prev.filter((b) => b !== business)
+        : [...prev, business]
+    );
 
   // Clear functions
   const clearSearch = () => setSearchQuery("");
   const clearAllFilters = () => {
     setSearchQuery("");
     setSortConfig({ key: null, direction: null });
+    setProvinceFilter([]);
+    setNatureOfBusinessFilter([]);
     setCurrentPage(1);
   };
 
-  // Filter data removed as per plan
+  // Get unique provinces from establishments
+  const uniqueProvinces = useMemo(() => {
+    const provinces = [
+      ...new Set(allEstablishments.map((e) => e.province)),
+    ].filter(Boolean);
+    return provinces.sort();
+  }, [allEstablishments]);
+
+  // Get unique nature of business from establishments
+  const uniqueNatureOfBusiness = useMemo(() => {
+    const businesses = [
+      ...new Set(allEstablishments.map((e) => e.nature_of_business)),
+    ].filter(Boolean);
+    return businesses.sort();
+  }, [allEstablishments]);
 
   // Pagination functions
   const goToPage = (page) => {
@@ -303,7 +336,97 @@ export default function MapPage() {
     setCurrentPage((prev) => Math.min(totalPages, prev + 1));
   };
 
-  const hasActiveFilters = searchQuery || sortConfig.key;
+  const hasActiveFilters =
+    searchQuery ||
+    sortConfig.key ||
+    provinceFilter.length > 0 ||
+    natureOfBusinessFilter.length > 0;
+
+  // Custom filters dropdown for TableToolbar
+  const customFiltersDropdown = (
+    <div className="absolute right-0 z-20 w-64 mt-1 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg top-full max-h-96 custom-scrollbar">
+      <div className="p-2">
+        {/* Filters Header */}
+        <div className="flex items-center justify-between px-3 py-2 border-b border-gray-200">
+          <div className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+            Filters
+          </div>
+          {(provinceFilter.length > 0 ||
+            natureOfBusinessFilter.length > 0 ||
+            searchQuery) && (
+            <button
+              onClick={clearAllFilters}
+              className="px-2 py-1 text-xs text-gray-600 transition-colors bg-gray-100 rounded hover:bg-gray-200"
+            >
+              Clear All
+            </button>
+          )}
+        </div>
+
+        {/* Province Filter */}
+        <div className="mb-2">
+          <div className="px-3 py-1 text-xs font-medium tracking-wide text-gray-600 uppercase">
+            Province
+          </div>
+          {uniqueProvinces.length > 0 ? (
+            uniqueProvinces.map((province) => (
+              <button
+                key={province}
+                onClick={() => toggleProvince(province)}
+                className={`w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-100 transition-colors ${
+                  provinceFilter.includes(province)
+                    ? "bg-sky-50 font-medium"
+                    : ""
+                }`}
+              >
+                <div className="flex-1 text-left">
+                  <div className="font-medium">{province}</div>
+                </div>
+                {provinceFilter.includes(province) && (
+                  <div className="w-2 h-2 rounded-full bg-sky-600"></div>
+                )}
+              </button>
+            ))
+          ) : (
+            <div className="px-3 py-2 text-sm text-gray-500">
+              No provinces available
+            </div>
+          )}
+        </div>
+
+        {/* Nature of Business Filter */}
+        <div className="mb-2">
+          <div className="px-3 py-1 text-xs font-medium tracking-wide text-gray-600 uppercase">
+            Nature of Business
+          </div>
+          {uniqueNatureOfBusiness.length > 0 ? (
+            uniqueNatureOfBusiness.map((business) => (
+              <button
+                key={business}
+                onClick={() => toggleNatureOfBusiness(business)}
+                className={`w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-100 transition-colors ${
+                  natureOfBusinessFilter.includes(business)
+                    ? "bg-sky-50 font-medium"
+                    : ""
+                }`}
+              >
+                <div className="flex-1 text-left">
+                  <div className="font-medium">{business}</div>
+                </div>
+                {natureOfBusinessFilter.includes(business) && (
+                  <div className="w-2 h-2 rounded-full bg-sky-600"></div>
+                )}
+              </button>
+            ))
+          ) : (
+            <div className="px-3 py-2 text-sm text-gray-500">
+              No nature of business available
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 
   // Calculate display range
   const startItem = (currentPage - 1) * pageSize + 1;
@@ -332,19 +455,20 @@ export default function MapPage() {
                 sortConfig={sortConfig}
                 sortFields={sortFields}
                 onSort={handleSort}
+                onFilterClick={() => setFiltersOpen(!filtersOpen)}
+                customFilterDropdown={
+                  filtersOpen ? customFiltersDropdown : null
+                }
+                filterOpen={filtersOpen}
+                onFilterClose={() => setFiltersOpen(false)}
               />
             </div>
           </div>
-                      
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             {/* Left Column: Map + Details Panel */}
-            <div className="flex flex-col gap-2 h-[calc(100vh-240px)]">
+            <div className="flex flex-col gap-2 h-[calc(100vh-220px)]">
               {/* Map Container - Dynamic height */}
-              <div className={`overflow-hidden rounded shadow transition-all duration-300 ${
-                focusedEstablishment && showDetailsPanel 
-                  ? 'h-[calc(100%-180px)]' 
-                  : 'flex-1'
-              }`}>
               <MapContainer
                 center={[16.597668, 120.322477]}
                 zoom={8}
@@ -353,7 +477,7 @@ export default function MapPage() {
                 maxZoom={22}
                 fullscreenControl={true}
                 fullscreenControlOptions={{
-                  position: 'topright'
+                  position: "topright",
                 }}
               >
                 <LayersControl position="topleft">
@@ -361,14 +485,14 @@ export default function MapPage() {
                   <LayersControl.BaseLayer name="Satellite">
                     <TileLayer
                       url="https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
-                      maxZoom={20}
+                      maxZoom={21}
                       subdomains={["mt1", "mt2", "mt3"]}
                       attribution="© Google"
                     />
                   </LayersControl.BaseLayer>
 
                   {/* 3D Map Layer with Buildings */}
-                  <LayersControl.BaseLayer checked name="3D Terrain">
+                  <LayersControl.BaseLayer checked name="Streets">
                     <TileLayer
                       url="https://api.maptiler.com/maps/streets-v2/256/{z}/{x}/{y}.png?key=Usuq2JxAdrdQy7GmBVyr"
                       attribution='<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>'
@@ -404,8 +528,10 @@ export default function MapPage() {
                           focusedEstablishment?.id === e.id
                             ? "#3388ff"
                             : "#999999",
-                        fillOpacity: focusedEstablishment?.id === e.id ? 0.3 : 0.1,
-                        dashArray: focusedEstablishment?.id === e.id ? "0" : "5 5",
+                        fillOpacity:
+                          focusedEstablishment?.id === e.id ? 0.3 : 0.1,
+                        dashArray:
+                          focusedEstablishment?.id === e.id ? "0" : "5 5",
                       }}
                       eventHandlers={{
                         click: () => {
@@ -416,23 +542,23 @@ export default function MapPage() {
                     >
                       {/* Only show Popup when details panel is hidden */}
                       {!showDetailsPanel && (
-                      <Popup>
-                        <div className="p-2">
-                          <strong>{e.name}</strong>
-                          <br />
-                          <span className="text-sm text-gray-600">
-                            {e.nature_of_business}
-                          </span>
-                          <br />
-                          <span className="text-xs text-gray-500">
-                            {e.street_building}, {e.barangay}, {e.city}
-                          </span>
-                          <br />
-                          <span className="text-xs text-gray-500">
-                            Established: {e.year_established}
-                          </span>
-                        </div>
-                      </Popup>
+                        <Popup>
+                          <div className="p-2">
+                            <strong>{e.name}</strong>
+                            <br />
+                            <span className="text-sm text-gray-600">
+                              {e.nature_of_business}
+                            </span>
+                            <br />
+                            <span className="text-xs text-gray-500">
+                              {e.street_building}, {e.barangay}, {e.city}
+                            </span>
+                            <br />
+                            <span className="text-xs text-gray-500">
+                              Established: {e.year_established}
+                            </span>
+                          </div>
+                        </Popup>
                       )}
                     </Polygon>
                   ) : (
@@ -444,8 +570,14 @@ export default function MapPage() {
                       ]}
                       icon={(() => {
                         // Get custom icon based on establishment type
-                        const iconData = getIconByNatureOfBusiness(e.marker_icon || e.nature_of_business);
-                        return createCustomMarkerIcon(iconData.icon, iconData.color, 28);
+                        const iconData = getIconByNatureOfBusiness(
+                          e.marker_icon || e.nature_of_business
+                        );
+                        return createCustomMarkerIcon(
+                          iconData.icon,
+                          iconData.color,
+                          28
+                        );
                       })()}
                       eventHandlers={{
                         click: () => {
@@ -456,23 +588,23 @@ export default function MapPage() {
                     >
                       {/* Only show Popup when details panel is hidden */}
                       {!showDetailsPanel && (
-                      <Popup>
-                        <div className="p-2">
-                          <strong>{e.name}</strong>
-                          <br />
-                          <span className="text-sm text-gray-600">
-                            {e.nature_of_business}
-                          </span>
-                          <br />
-                          <span className="text-xs text-gray-500">
-                            {e.street_building}, {e.barangay}, {e.city}
-                          </span>
-                          <br />
-                          <span className="text-xs text-gray-500">
-                            Established: {e.year_established}
-                          </span>
-                        </div>
-                      </Popup>
+                        <Popup>
+                          <div className="p-2">
+                            <strong>{e.name}</strong>
+                            <br />
+                            <span className="text-sm text-gray-600">
+                              {e.nature_of_business}
+                            </span>
+                            <br />
+                            <span className="text-xs text-gray-500">
+                              {e.street_building}, {e.barangay}, {e.city}
+                            </span>
+                            <br />
+                            <span className="text-xs text-gray-500">
+                              Established: {e.year_established}
+                            </span>
+                          </div>
+                        </Popup>
                       )}
                     </Marker>
                   )
@@ -480,107 +612,21 @@ export default function MapPage() {
               </MapContainer>
             </div>
 
-              {/* Compressed Details Panel - Shows when establishment is selected */}
-              {focusedEstablishment && (
-                <div className="bg-white rounded shadow-lg border border-gray-300 transition-all duration-300">
-                  {/* Compact Header with Toggle */}
-                  <div className="flex items-center justify-between p-2 bg-sky-50 border-b border-gray-200">
-                    <div className="flex items-center gap-2">
-                      <Building2 size={18} className="text-sky-600" />
-                      <h3 className="text-sm font-bold text-sky-700">
-                        {focusedEstablishment.name}
-                      </h3>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setShowDetailsPanel(!showDetailsPanel)}
-                        className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-sky-600 bg-white border border-sky-300 rounded hover:bg-sky-50 transition-colors"
-                      >
-                        {showDetailsPanel ? (
-                          <>
-                            <ChevronUp size={14} />
-                            Hide
-                          </>
-                        ) : (
-                          <>
-                            <ChevronDown size={14} />
-                            Show
-                          </>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => setFocusedEstablishment(null)}
-                        className="text-gray-400 hover:text-gray-600 p-1"
-                        title="Close"
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Collapsible Details Content */}
-                  {showDetailsPanel && (
-                    <div className="p-3 max-h-36 overflow-y-auto custom-scrollbar">
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div>
-                          <span className="font-semibold text-gray-600">Business Type:</span>
-                          <p className="text-gray-900">{focusedEstablishment.nature_of_business}</p>
-                        </div>
-                        
-                        <div>
-                          <span className="font-semibold text-gray-600">Year Est.:</span>
-                          <p className="text-gray-900">{focusedEstablishment.year_established}</p>
-                        </div>
-                        
-                        <div className="col-span-2">
-                          <span className="font-semibold text-gray-600">Address:</span>
-                          <p className="text-gray-900">
-                            {focusedEstablishment.street_building}, {focusedEstablishment.barangay}, 
-                            {focusedEstablishment.city}, {focusedEstablishment.province}, 
-                            {focusedEstablishment.postal_code}
-                          </p>
-                        </div>
-                        
-                        <div>
-                          <span className="font-semibold text-gray-600">Coordinates:</span>
-                          <p className="text-gray-900 font-mono text-[10px]">
-                            {parseFloat(focusedEstablishment.latitude).toFixed(6)}, 
-                            {parseFloat(focusedEstablishment.longitude).toFixed(6)}
-                          </p>
-                        </div>
-                        
-                        {focusedEstablishment.contact_number && (
-                          <div>
-                            <span className="font-semibold text-gray-600">Contact:</span>
-                            <p className="text-gray-900">{focusedEstablishment.contact_number}</p>
-                          </div>
-                        )}
-                        
-                        {focusedEstablishment.email && (
-                          <div className="col-span-2">
-                            <span className="font-semibold text-gray-600">Email:</span>
-                            <p className="text-gray-900 truncate">{focusedEstablishment.email}</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
             {/* Right Column: Table */}
-            <div className="flex flex-col h-[calc(100vh-240px)]">
+            <div className="flex flex-col h-[calc(100vh-220px)]">
               {/* Table Container */}
-              <div className=" rounded flex-1 overflow-y-auto min-h-0 custom-scrollbar">
+              <div className="flex-1 min-h-0 overflow-y-auto rounded custom-scrollbar">
                 <table className="w-full border-b border-gray-300 rounded-lg">
                   <thead>
-                    <tr className="text-xs text-left text-white bg-gradient-to-r from-sky-600 to-sky-700 sticky top-0 z-10">
+                    <tr className="sticky top-0 z-10 text-xs text-left text-white bg-gradient-to-r from-sky-600 to-sky-700">
                       <th
                         className="px-3 py-2 border-b border-gray-300 cursor-pointer"
                         onClick={() => {
                           if (sortConfig.key === "name") {
-                            handleSort("name", sortConfig.direction === "asc" ? "desc" : "asc");
+                            handleSort(
+                              "name",
+                              sortConfig.direction === "asc" ? "desc" : "asc"
+                            );
                           } else {
                             handleSort("name", "asc");
                           }
@@ -594,7 +640,10 @@ export default function MapPage() {
                         className="px-3 py-2 border-b border-gray-300 cursor-pointer"
                         onClick={() => {
                           if (sortConfig.key === "city") {
-                            handleSort("city", sortConfig.direction === "asc" ? "desc" : "asc");
+                            handleSort(
+                              "city",
+                              sortConfig.direction === "asc" ? "desc" : "asc"
+                            );
                           } else {
                             handleSort("city", "asc");
                           }
@@ -607,22 +656,6 @@ export default function MapPage() {
                       <th className="px-3 py-2 text-center border-b border-gray-300">
                         Coordinates
                       </th>
-                      {/* <th
-                        className="p-2 border-b border-gray-300 cursor-pointer"
-                        onClick={() => handleSort("nature_of_business")}
-                      >
-                        <div className="flex items-center gap-1">
-                          Business Type {getSortIcon("nature_of_business")}
-                        </div>
-                      </th>
-                      <th
-                        className="p-2 text-center border-b border-gray-300 cursor-pointer"
-                        onClick={() => handleSort("year_established")}
-                      >
-                        <div className="flex items-center justify-center gap-1">
-                          Year {getSortIcon("year_established")}
-                        </div>
-                      </th> */}
                     </tr>
                   </thead>
                   <tbody>
@@ -681,8 +714,11 @@ export default function MapPage() {
                             {e.name}
                           </td>
                           <td className="px-3 py-2 text-left border-b border-gray-300">
-                            <div className="truncate max-w-xs" title={`${e.street_building}, ${e.barangay}, ${e.city}, ${e.province}`}>
-                            {`${e.street_building}, ${e.barangay}, ${e.city}, ${e.province}`}
+                            <div
+                              className="max-w-xs truncate"
+                              title={`${e.street_building}, ${e.barangay}, ${e.city}, ${e.province}`}
+                            >
+                              {`${e.street_building}, ${e.barangay}, ${e.city}, ${e.province}`}
                             </div>
                           </td>
                           <td className="px-3 py-2 text-center border-b border-gray-300">
@@ -690,12 +726,6 @@ export default function MapPage() {
                               4
                             )}, ${parseFloat(e.longitude).toFixed(4)}`}
                           </td>
-                          {/* <td className="p-2 border-b border-gray-300">
-                            {e.nature_of_business}
-                          </td>
-                          <td className="p-2 text-center border-b border-gray-300">
-                            {e.year_established}
-                          </td> */}
                         </tr>
                       ))
                     )}
@@ -705,7 +735,7 @@ export default function MapPage() {
 
               {/* Pagination Controls */}
               {filteredEstablishments.length > 0 && (
-                <div className="flex-shrink-0 flex items-center justify-between p-2 mt-4 rounded bg-gray-50">
+                <div className="flex items-center justify-between flex-shrink-0 p-2 mt-4 rounded bg-gray-50">
                   <div className="text-sm text-gray-600">
                     Showing {startItem} to {endItem} of{" "}
                     {filteredEstablishments.length} establishment(s)
@@ -780,7 +810,6 @@ export default function MapPage() {
                 </div>
               )}
             </div>
-
           </div>
         </div>
       </LayoutWithSidebar>

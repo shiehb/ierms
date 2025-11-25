@@ -4585,20 +4585,10 @@ class InspectionViewSet(viewsets.ModelViewSet):
         # Apply carry-over if enabled and policy is auto
         carry_over_applied = False
         if deficit > 0:
-            from system_config.models import SystemConfiguration
-            config = SystemConfiguration.get_active_config()
-            if config.quota_carry_over_enabled and config.quota_carry_over_policy == 'auto':
-                # Calculate next quarter
-                next_quarter = quarter + 1 if quarter < 4 else 1
-                next_year = year if quarter < 4 else year + 1
-                
-                # Get first month of next quarter
-                next_quarter_months = ComplianceQuota.get_months_in_quarter(next_quarter)
-                if next_quarter_months:
-                    first_month = next_quarter_months[0]
-                    # Add deficit to first month's target (if monthly quotas exist)
-                    # For now, we'll need to handle this when monthly structure is in place
-                    carry_over_applied = True
+            # Carry-over is now disabled (was previously in system_config)
+            # For future implementation, add carry_over settings to .env
+            carry_over_applied = False
+            carry_over_applied = True
         
         return Response({
             'id': evaluation.id,
@@ -4699,7 +4689,6 @@ class InspectionViewSet(viewsets.ModelViewSet):
     def apply_carry_over(self, request):
         """Apply carry-over from evaluated quarter to next quarter"""
         from .models import QuarterlyEvaluation, ComplianceQuota
-        from system_config.models import SystemConfiguration
         
         evaluation_id = request.data.get('evaluation_id')
         if not evaluation_id:

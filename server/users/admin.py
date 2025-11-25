@@ -3,8 +3,10 @@ from django.contrib import messages
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.utils.html import format_html
+import os
+import secrets
+import string
 from .models import User
-from system_config.models import SystemConfiguration
 from .signals import user_created_with_password
 
 @admin.register(User)
@@ -36,34 +38,39 @@ class UserAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+
+    def generate_default_password(self):
+        """Generate a secure random password"""
+        alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
+        return ''.join(secrets.choice(alphabet) for _ in range(12))
+    
+    def is_system_email_configured(self):
+        """Check if email configuration is complete"""
+        email_host_user = os.getenv('EMAIL_HOST_USER')
+        email_host_password = os.getenv('EMAIL_HOST_PASSWORD')
+        default_from_email = os.getenv('DEFAULT_FROM_EMAIL')
+        return all([email_host_user, email_host_password, default_from_email])
     
     def add_view(self, request, form_url='', extra_context=None):
         """Override add_view to check email configuration"""
-        if not SystemConfiguration.is_system_email_configured():
+        if not self.is_system_email_configured():
             messages.error(
                 request,
-                format_html(
-                    'Cannot create users until System Configuration email settings are complete. '
-                    'Please configure the following fields in <a href="{}">System Configuration</a>:<br>'
-                    '• Email host user<br>'
-                    '• Email host password<br>'
-                    '• Default from email',
-                    reverse('admin:system_config_systemconfiguration_changelist')
-                )
+                'Email configuration is incomplete. Please contact your system administrator to configure email settings in the .env file.'
             )
-            return HttpResponseRedirect(reverse('admin:system_config_systemconfiguration_changelist'))
+            return HttpResponseRedirect(reverse('admin:users_user_changelist'))
         
         return super().add_view(request, form_url, extra_context)
     
     def has_add_permission(self, request):
         """Override to prevent adding users if email is not configured"""
-        return SystemConfiguration.is_system_email_configured()
+        return self.is_system_email_configured()
     
     def save_model(self, request, obj, form, change):
         """Ensure password is generated, saved, and emailed on admin creation."""
         if not change:
             # Newly created via admin: generate a secure password and email it
-            generated_password = SystemConfiguration.generate_default_password()
+            generated_password = self.generate_default_password()
             obj.set_password(generated_password)
             # Mark flags for first login
             if hasattr(obj, 'must_change_password'):
@@ -90,13 +97,9 @@ class UserAdmin(admin.ModelAdmin):
     
     def changelist_view(self, request, extra_context=None):
         """Add warning message to changelist if email is not configured"""
-        if not SystemConfiguration.is_system_email_configured():
+        if not self.is_system_email_configured():
             messages.warning(
                 request,
-                format_html(
-                    'Email configuration is incomplete. User creation is disabled until '
-                    '<a href="{}">System Configuration</a> email settings are configured.',
-                    reverse('admin:system_config_systemconfiguration_changelist')
-                )
+                'Email configuration is incomplete. User creation is disabled until email settings are configured in the .env file.'
             )
         return super().changelist_view(request, extra_context)

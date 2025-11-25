@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import ConfirmationDialog from "../common/ConfirmationDialog";
-import { useNotifications } from "../NotificationManager";
+import { useNotifications } from "../../hooks/useNotifications";
 import { AlertTriangle, Upload, X, User, Info } from "lucide-react";
 
 export default function AddUser({ onClose, onUserAdded }) {
@@ -23,12 +23,12 @@ export default function AddUser({ onClose, onUserAdded }) {
     configured: false,
     connectivity: false,
     errors: [],
-    message: ""
+    message: "",
   });
   const [emailCheck, setEmailCheck] = useState({
     checking: false,
     exists: false,
-    existingUser: null
+    existingUser: null,
   });
   const [emailFormatValid, setEmailFormatValid] = useState(true);
   const [avatar, setAvatar] = useState(null);
@@ -43,10 +43,11 @@ export default function AddUser({ onClose, onUserAdded }) {
     if (!email || email.trim() === "") {
       return true; // Empty is okay, will be caught by required validation
     }
-    
+
     // Email regex pattern
-    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
-    
+    const emailRegex =
+      /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+
     return emailRegex.test(email.trim().toLowerCase());
   };
 
@@ -57,9 +58,9 @@ export default function AddUser({ onClose, onUserAdded }) {
         const response = await api.get("system/config/validate-email/");
         setEmailValidation({
           loading: false,
-          ...response.data
+          ...response.data,
         });
-        
+
         if (!response.data.valid) {
           // Different notifications based on the issue
           if (!response.data.configured) {
@@ -68,7 +69,7 @@ export default function AddUser({ onClose, onUserAdded }) {
               "Email configuration is incomplete. Please configure email settings.",
               {
                 title: "Email Configuration Required",
-                duration: 8000
+                duration: 8000,
               }
             );
           } else if (!response.data.connectivity) {
@@ -77,7 +78,7 @@ export default function AddUser({ onClose, onUserAdded }) {
               "Cannot connect to email server. Please check your internet connection and try again.",
               {
                 title: "Connection Error",
-                duration: 8000
+                duration: 8000,
               }
             );
           }
@@ -90,7 +91,7 @@ export default function AddUser({ onClose, onUserAdded }) {
           configured: false,
           connectivity: false,
           errors: ["Failed to validate email configuration"],
-          message: "Email validation failed"
+          message: "Email validation failed",
         });
       }
     };
@@ -126,19 +127,19 @@ export default function AddUser({ onClose, onUserAdded }) {
       setEmailCheck({ checking: true, exists: false, existingUser: null });
       try {
         const response = await api.get("auth/search/", {
-          params: { q: formData.email }
+          params: { q: formData.email },
         });
-        
+
         // Check if any result matches the exact email
         const exactMatch = response.data.results?.find(
-          user => user.email.toLowerCase() === formData.email.toLowerCase()
+          (user) => user.email.toLowerCase() === formData.email.toLowerCase()
         );
-        
+
         if (exactMatch) {
           setEmailCheck({
             checking: false,
             exists: true,
-            existingUser: exactMatch
+            existingUser: exactMatch,
           });
         } else {
           setEmailCheck({ checking: false, exists: false, existingUser: null });
@@ -159,8 +160,14 @@ export default function AddUser({ onClose, onUserAdded }) {
   // Section options depending on role
   const sectionOptionsByLevel = {
     "Section Chief": [
-      { value: "PD-1586,RA-8749,RA-9275", label: "EIA, Air & Water Quality Monitoring Section" },
-      { value: "RA-6969", label: "Toxic Chemicals & Hazardous Monitoring Section" },
+      {
+        value: "PD-1586,RA-8749,RA-9275",
+        label: "EIA, Air & Water Quality Monitoring Section",
+      },
+      {
+        value: "RA-6969",
+        label: "Toxic Chemicals & Hazardous Monitoring Section",
+      },
       { value: "RA-9003", label: "Ecological Solid Waste Management Section" },
     ],
     "Unit Head": [
@@ -185,15 +192,15 @@ export default function AddUser({ onClose, onUserAdded }) {
     } else if (name === "email") {
       newValue = value.toLowerCase();
     }
-    
+
     setFormData((prev) => {
       let newFormData = { ...prev, [name]: newValue };
-      
+
       // Reset section when user level changes
       if (name === "userLevel") {
         newFormData.section = "";
       }
-      
+
       return newFormData;
     });
   };
@@ -202,19 +209,22 @@ export default function AddUser({ onClose, onUserAdded }) {
     const file = e.target.files?.[0];
     if (file) {
       // Validate file type
-      if (!file.type.startsWith('image/')) {
+      if (!file.type.startsWith("image/")) {
         notifications.error("Please select a valid image file", {
           title: "Invalid File",
-          duration: 4000
+          duration: 4000,
         });
         return;
       }
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        notifications.error("Image size must be less than 5MB. The image will be automatically optimized after upload.", {
-          title: "File Too Large",
-          duration: 5000
-        });
+        notifications.error(
+          "Image size must be less than 5MB. The image will be automatically optimized after upload.",
+          {
+            title: "File Too Large",
+            duration: 5000,
+          }
+        );
         return;
       }
       setAvatar(file);
@@ -226,7 +236,7 @@ export default function AddUser({ onClose, onUserAdded }) {
     setAvatar(null);
     setAvatarPreview(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = "";
     }
   };
 
@@ -250,23 +260,23 @@ export default function AddUser({ onClose, onUserAdded }) {
     setLoading(true);
     try {
       const payload = new FormData();
-      payload.append('email', formData.email);
-      payload.append('first_name', formData.firstName);
+      payload.append("email", formData.email);
+      payload.append("first_name", formData.firstName);
       if (formData.middleName.trim()) {
-        payload.append('middle_name', formData.middleName);
+        payload.append("middle_name", formData.middleName);
       }
-      payload.append('last_name', formData.lastName);
-      payload.append('userlevel', formData.userLevel);
+      payload.append("last_name", formData.lastName);
+      payload.append("userlevel", formData.userLevel);
       if (formData.section) {
-        payload.append('section', formData.section);
+        payload.append("section", formData.section);
       }
       if (avatar) {
-        payload.append('avatar', avatar);
+        payload.append("avatar", avatar);
       }
 
       await api.post("auth/register/", payload, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          "Content-Type": "multipart/form-data",
         },
       });
 
@@ -274,26 +284,24 @@ export default function AddUser({ onClose, onUserAdded }) {
         `User ${formData.firstName} ${formData.lastName} has been added successfully!`,
         {
           title: "User Added Successfully",
-          duration: 5000
+          duration: 5000,
         }
       );
 
       if (onUserAdded) onUserAdded();
       onClose();
     } catch (err) {
-      const errorMessage = err.response?.data?.detail || 
-                         err.response?.data?.email?.[0] ||
-                         err.response?.data?.userlevel?.[0] ||
-                         err.response?.data?.section?.[0] ||
-                         "An unexpected error occurred while creating the user.";
-      
-      notifications.error(
-        errorMessage,
-        {
-          title: "Failed to Add User",
-          duration: 8000
-        }
-      );
+      const errorMessage =
+        err.response?.data?.detail ||
+        err.response?.data?.email?.[0] ||
+        err.response?.data?.userlevel?.[0] ||
+        err.response?.data?.section?.[0] ||
+        "An unexpected error occurred while creating the user.";
+
+      notifications.error(errorMessage, {
+        title: "Failed to Add User",
+        duration: 8000,
+      });
     } finally {
       setLoading(false);
     }
@@ -304,9 +312,13 @@ export default function AddUser({ onClose, onUserAdded }) {
     if (formData.userLevel === "Division Chief") {
       return "Please note: Creating a new Division Chief will automatically deactivate any existing active Division Chief.";
     } else if (formData.userLevel === "Section Chief") {
-      return `Please note: Creating a new Section Chief for ${formData.section ? `section ${formData.section}` : 'this section'} will automatically deactivate any existing active Section Chief with the same section.`;
+      return `Please note: Creating a new Section Chief for ${
+        formData.section ? `section ${formData.section}` : "this section"
+      } will automatically deactivate any existing active Section Chief with the same section.`;
     } else if (formData.userLevel === "Unit Head") {
-      return `Please note: Creating a new Unit Head for ${formData.section ? `section ${formData.section}` : 'this section'} will automatically deactivate any existing active Unit Head with the same section.`;
+      return `Please note: Creating a new Unit Head for ${
+        formData.section ? `section ${formData.section}` : "this section"
+      } will automatically deactivate any existing active Unit Head with the same section.`;
     }
     return null;
   };
@@ -314,7 +326,7 @@ export default function AddUser({ onClose, onUserAdded }) {
   // Build confirmation message
   const getConfirmationMessage = () => {
     const autoDeactivationMsg = getAutoDeactivationMessage();
-    
+
     return (
       <div className="space-y-3">
         <p className="text-gray-700">
@@ -351,16 +363,15 @@ export default function AddUser({ onClose, onUserAdded }) {
           !formData.section.trim() && (
             <span className="text-xs text-red-500">Required</span>
           )}
-        {field !== "section" && field !== "email" && required && submitted && !formData[field]?.trim() && (
-          <span className="text-xs text-red-500">Required</span>
-        )}
+        {field !== "section" &&
+          field !== "email" &&
+          required &&
+          submitted &&
+          !formData[field]?.trim() && (
+            <span className="text-xs text-red-500">Required</span>
+          )}
       </label>
     );
-  };
-
-  const handleGoToConfig = () => {
-    onClose();
-    navigate("/system-config");
   };
 
   return (
@@ -376,8 +387,8 @@ export default function AddUser({ onClose, onUserAdded }) {
             <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
             <div className="flex-1">
               <h3 className="font-semibold text-yellow-800 mb-1">
-                {!emailValidation.configured 
-                  ? "Email Configuration Required" 
+                {!emailValidation.configured
+                  ? "Email Configuration Required"
                   : "Connection Issue"}
               </h3>
               <p className="text-sm text-yellow-700 mb-2">
@@ -392,13 +403,10 @@ export default function AddUser({ onClose, onUserAdded }) {
               )}
               {/* Show link ONLY if email is not configured */}
               {!emailValidation.configured && (
-                <button
-                  type="button"
-                  onClick={handleGoToConfig}
-                  className="text-sm font-medium text-sky-600 hover:text-sky-700 underline"
-                >
-                  Go to System Configuration →
-                </button>
+                <p className="text-sm font-medium text-sky-600">
+                  Email configuration is required. Contact your system
+                  administrator.
+                </p>
               )}
             </div>
           </div>
@@ -439,11 +447,12 @@ export default function AddUser({ onClose, onUserAdded }) {
               className="hidden"
             />
             <span className="text-xs text-sky-600 hover:text-sky-700 underline cursor-pointer">
-              {avatarPreview ? 'Change Avatar' : 'Upload Avatar'}
+              {avatarPreview ? "Change Avatar" : "Upload Avatar"}
             </span>
           </label>
           <p className="text-xs text-gray-500 mt-1">
-            Maximum file size: 5MB. Images are automatically optimized for web display.
+            Maximum file size: 5MB. Images are automatically optimized for web
+            display.
           </p>
         </div>
 
@@ -464,7 +473,9 @@ export default function AddUser({ onClose, onUserAdded }) {
             />
           </div>
           <div>
-            <Label field="middleName" required={false}>Middle Name</Label>
+            <Label field="middleName" required={false}>
+              Middle Name
+            </Label>
             <input
               type="text"
               name="middleName"
@@ -566,7 +577,6 @@ export default function AddUser({ onClose, onUserAdded }) {
           </div>
         </div>
 
-
         {/* Buttons */}
         <div className="flex gap-4 pt-2">
           <button
@@ -584,7 +594,11 @@ export default function AddUser({ onClose, onUserAdded }) {
                 ? "bg-gray-400 cursor-not-allowed"
                 : "bg-sky-600 hover:bg-sky-700"
             }`}
-            title={!emailValidation.valid ? "Please configure email settings first" : ""}
+            title={
+              !emailValidation.valid
+                ? "Please configure email settings first"
+                : ""
+            }
           >
             {emailValidation.loading ? "Validating..." : "Save"}
           </button>

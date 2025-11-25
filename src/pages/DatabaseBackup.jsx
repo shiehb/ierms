@@ -4,7 +4,7 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import LayoutWithSidebar from "../components/LayoutWithSidebar";
 import ConfirmationDialog from "../components/common/ConfirmationDialog";
-import { useNotifications } from "../components/NotificationManager";
+import { useNotifications } from "../hooks/useNotifications";
 import ExportDropdown from "../components/ExportDropdown";
 import PrintPDF from "../components/PrintPDF";
 import DateRangeDropdown from "../components/DateRangeDropdown";
@@ -89,7 +89,6 @@ const DatabaseBackup = () => {
     fetchUserProfile();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-
   // load backups list
   const loadBackups = async () => {
     try {
@@ -114,12 +113,12 @@ const DatabaseBackup = () => {
     if (type === "success") {
       notifications.success(msg, {
         title: "Backup Operation",
-        duration: 4000
+        duration: 4000,
       });
     } else if (type === "error") {
       notifications.error(msg, {
         title: "Backup Error",
-        duration: 6000
+        duration: 6000,
       });
     }
   };
@@ -127,25 +126,27 @@ const DatabaseBackup = () => {
   const handleBackup = async () => {
     // Prompt for directory selection first
     let selectedPath = "";
-    
+
     try {
       // Check if the File System Access API is supported (Chrome/Edge)
-      if ('showDirectoryPicker' in window) {
+      if ("showDirectoryPicker" in window) {
         const directoryHandle = await window.showDirectoryPicker({
-          mode: 'readwrite'
+          mode: "readwrite",
         });
-        
+
         try {
-          const permissionStatus = await directoryHandle.requestPermission({ mode: 'readwrite' });
-          
-          if (permissionStatus === 'granted') {
+          const permissionStatus = await directoryHandle.requestPermission({
+            mode: "readwrite",
+          });
+
+          if (permissionStatus === "granted") {
             const name = directoryHandle.name;
             let pathInfo = name;
-            
-            if ('path' in directoryHandle && directoryHandle.path) {
+
+            if ("path" in directoryHandle && directoryHandle.path) {
               pathInfo = directoryHandle.path;
             }
-            
+
             selectedPath = pathInfo;
           } else {
             selectedPath = directoryHandle.name;
@@ -157,55 +158,58 @@ const DatabaseBackup = () => {
         // Fallback for browsers that don't support File System Access API
         const manualPath = prompt(
           "Enter the full backup directory path:\n\n" +
-          "Example Windows: C:\\Users\\YourName\\Documents\\backups\n" +
-          "Example Linux: /home/username/backups\n" +
-          "Example Mac: /Users/username/backups"
+            "Example Windows: C:\\Users\\YourName\\Documents\\backups\n" +
+            "Example Linux: /home/username/backups\n" +
+            "Example Mac: /Users/username/backups"
         );
         if (!manualPath) return;
         selectedPath = manualPath.trim();
       }
-      
+
       if (!selectedPath) {
         showMessage("Please select a backup directory", "error");
         return;
       }
-      
+
       // Validate that it's not a system directory path
-      const normalizedPath = selectedPath.toLowerCase().replace(/\\/g, '/');
+      const normalizedPath = selectedPath.toLowerCase().replace(/\\/g, "/");
       const systemDirectories = [
-        'windows',
-        'program files',
-        'program files (x86)',
-        'system32',
-        'syswow64',
-        'programdata',
+        "windows",
+        "program files",
+        "program files (x86)",
+        "system32",
+        "syswow64",
+        "programdata",
       ];
-      
-      const isSystemDirectory = systemDirectories.some(sysDir => 
-        normalizedPath.includes(`/${sysDir}/`) || 
-        normalizedPath.includes(`/${sysDir}\\`) ||
-        normalizedPath.endsWith(`/${sysDir}`) ||
-        normalizedPath === sysDir ||
-        normalizedPath.startsWith(`${sysDir}/`) ||
-        normalizedPath.startsWith(`${sysDir}\\`)
+
+      const isSystemDirectory = systemDirectories.some(
+        (sysDir) =>
+          normalizedPath.includes(`/${sysDir}/`) ||
+          normalizedPath.includes(`/${sysDir}\\`) ||
+          normalizedPath.endsWith(`/${sysDir}`) ||
+          normalizedPath === sysDir ||
+          normalizedPath.startsWith(`${sysDir}/`) ||
+          normalizedPath.startsWith(`${sysDir}\\`)
       );
-      
+
       if (isSystemDirectory) {
         showMessage(
-          'System directories are protected and cannot be used. Please use a safe location like Documents, Desktop, or create a custom backup folder (e.g., C:\\Users\\YourName\\Documents\\backups).',
+          "System directories are protected and cannot be used. Please use a safe location like Documents, Desktop, or create a custom backup folder (e.g., C:\\Users\\YourName\\Documents\\backups).",
           "error"
         );
         return;
       }
-      
+
       // Store the selected path and show confirmation dialog
       setBackupPath(selectedPath);
       setBackupConfirm(true);
     } catch (error) {
-      if (error.name !== 'AbortError') {
+      if (error.name !== "AbortError") {
         console.error("Backup error:", error);
         const errorMessage =
-          error.response?.data?.error || error.message || "Failed to create backup";
+          error.response?.data?.error ||
+          error.message ||
+          "Failed to create backup";
         showMessage(errorMessage, "error");
       }
     }
@@ -217,14 +221,16 @@ const DatabaseBackup = () => {
     try {
       setProcessing(true);
       setProcessingAction("backup");
-      
+
       const response = await createBackup(backupPath);
       showMessage(response.message || "Backup created successfully!");
       loadBackups();
     } catch (error) {
       console.error("Backup error:", error);
       const errorMessage =
-        error.response?.data?.error || error.message || "Failed to create backup";
+        error.response?.data?.error ||
+        error.message ||
+        "Failed to create backup";
       showMessage(errorMessage, "error");
     } finally {
       setProcessing(false);
@@ -250,7 +256,10 @@ const DatabaseBackup = () => {
         return;
       }
 
-      showMessage(response.message || "Database restored successfully!", "success");
+      showMessage(
+        response.message || "Database restored successfully!",
+        "success"
+      );
       // Reset form
       setRestoreFile(null);
       setRestoreFileName("");
@@ -301,9 +310,6 @@ const DatabaseBackup = () => {
     }
   };
 
-
-
-
   const formatFullDate = (dateString) => {
     if (!dateString) return "-";
     const date = new Date(dateString);
@@ -337,8 +343,6 @@ const DatabaseBackup = () => {
     );
   };
 
-
-
   // ✅ Filter + Sort with LOCAL search (client-side only)
   const filteredBackups = useMemo(() => {
     let list = backups.filter((backup) => {
@@ -360,11 +364,14 @@ const DatabaseBackup = () => {
         : true;
 
       // Apply backup type filter
-      const matchesTypeFilter = backupTypeFilter === "all" 
-        ? true 
-        : (backup.backup_type || "backup") === backupTypeFilter;
+      const matchesTypeFilter =
+        backupTypeFilter === "all"
+          ? true
+          : (backup.backup_type || "backup") === backupTypeFilter;
 
-      return matchesSearch && matchesDateFrom && matchesDateTo && matchesTypeFilter;
+      return (
+        matchesSearch && matchesDateFrom && matchesDateTo && matchesTypeFilter
+      );
     });
 
     // Apply sorting
@@ -393,7 +400,14 @@ const DatabaseBackup = () => {
     }
 
     return list;
-  }, [backups, debouncedSearchQuery, dateFrom, dateTo, sortConfig, backupTypeFilter]);
+  }, [
+    backups,
+    debouncedSearchQuery,
+    dateFrom,
+    dateTo,
+    sortConfig,
+    backupTypeFilter,
+  ]);
 
   // ✅ Pagination (client-side for now)
   const totalPages = Math.ceil(filteredBackups.length / pageSize);
@@ -404,7 +418,9 @@ const DatabaseBackup = () => {
   // ✅ Selection
   const toggleSelect = (fileName) => {
     setSelectedBackups((prev) =>
-      prev.includes(fileName) ? prev.filter((x) => x !== fileName) : [...prev, fileName]
+      prev.includes(fileName)
+        ? prev.filter((x) => x !== fileName)
+        : [...prev, fileName]
     );
   };
 
@@ -416,7 +432,6 @@ const DatabaseBackup = () => {
     }
   };
 
-
   // Clear functions
   const clearSearch = () => setSearchQuery("");
   const clearAllFilters = () => {
@@ -427,7 +442,6 @@ const DatabaseBackup = () => {
     setSortConfig({ key: null, direction: null });
     setCurrentPage(1);
   };
-
 
   // Pagination functions
   const goToPage = (page) => {
@@ -446,8 +460,6 @@ const DatabaseBackup = () => {
   // Calculate display range
   const startItem = startIndex + 1;
   const endItem = Math.min(endIndex, filteredCount);
-
-
 
   if (loadingUser) {
     return (
@@ -473,82 +485,103 @@ const DatabaseBackup = () => {
             <h1 className="text-2xl font-bold text-sky-600">
               Database Backup & Restore
             </h1>
-            
+
             <TableToolbar
-                searchValue={searchQuery}
-                onSearchChange={setSearchQuery}
-                onSearchClear={clearSearch}
-                searchPlaceholder="Search..."
-                sortConfig={sortConfig}
-                sortFields={[
-                  { key: "fileName", label: "File Name" },
-                  { key: "location", label: "Location" },
-                  { key: "created_at", label: "Created Date" },
-                  { key: "backup_type", label: "Type" },
-                ]}
-                onSort={(fieldKey, directionKey) => {
-                  if (fieldKey === null && directionKey === null) {
-                    setSortConfig({ key: null, direction: null });
-                  } else {
-                    setSortConfig({ key: fieldKey, direction: directionKey || "asc" });
-                  }
-                }}
-                typeFilterValue={backupTypeFilter}
-                typeFilterOptions={[
-                  { value: "all", label: "Show All" },
-                  { value: "backup", label: "Backup" },
-                  { value: "restore", label: "Restore" },
-                ]}
-                onTypeFilterChange={setBackupTypeFilter}
-                dateFrom={dateFrom}
-                dateTo={dateTo}
-                onDateFromChange={setDateFrom}
-                onDateToChange={setDateTo}
-                exportConfig={{
-                  title: "Backups Export Report",
-                  fileName: "backups_export",
-                  columns: ["File Name", "Type", "Location", "Created At"],
-                  rows: selectedBackups.length > 0 ? 
-                  selectedBackups.map(fileName => {
-                    const backup = backups.find(b => b.fileName === fileName);
-                    return backup ? [
-                      backup.fileName,
-                      backup.backup_type === "restore" ? "Restore" : "Backup",
-                      backup.location || "-",
-                      formatFullDate(backup.created_at)
-                    ] : [];
-                  }).filter(row => row.length > 0) : 
-                  backups.map(backup => [
-                    backup.fileName,
-                    backup.backup_type === "restore" ? "Restore" : "Backup",
-                    backup.location || "-",
-                    formatFullDate(backup.created_at)
-                  ])
-                }}
-                printConfig={{
-                  title: "Backups Report",
-                  fileName: "backups_report",
-                  columns: ["File Name", "Type", "Location", "Created At"],
-                  rows: selectedBackups.length > 0 ? 
-                  selectedBackups.map(fileName => {
-                    const backup = backups.find(b => b.fileName === fileName);
-                    return backup ? [
-                      backup.fileName,
-                      backup.backup_type === "restore" ? "Restore" : "Backup",
-                      backup.location || "-",
-                      formatFullDate(backup.created_at)
-                    ] : [];
-                  }).filter(row => row.length > 0) : 
-                  backups.map(backup => [
-                    backup.fileName,
-                    backup.backup_type === "restore" ? "Restore" : "Backup",
-                    backup.location || "-",
-                    formatFullDate(backup.created_at)
-                  ])
-                }}
-                onRefresh={loadBackups}
-                isRefreshing={loadingBackups}
-              />
+              searchValue={searchQuery}
+              onSearchChange={setSearchQuery}
+              onSearchClear={clearSearch}
+              searchPlaceholder="Search..."
+              sortConfig={sortConfig}
+              sortFields={[
+                { key: "fileName", label: "File Name" },
+                { key: "location", label: "Location" },
+                { key: "created_at", label: "Created Date" },
+                { key: "backup_type", label: "Type" },
+              ]}
+              onSort={(fieldKey, directionKey) => {
+                if (fieldKey === null && directionKey === null) {
+                  setSortConfig({ key: null, direction: null });
+                } else {
+                  setSortConfig({
+                    key: fieldKey,
+                    direction: directionKey || "asc",
+                  });
+                }
+              }}
+              typeFilterValue={backupTypeFilter}
+              typeFilterOptions={[
+                { value: "all", label: "Show All" },
+                { value: "backup", label: "Backup" },
+                { value: "restore", label: "Restore" },
+              ]}
+              onTypeFilterChange={setBackupTypeFilter}
+              dateFrom={dateFrom}
+              dateTo={dateTo}
+              onDateFromChange={setDateFrom}
+              onDateToChange={setDateTo}
+              exportConfig={{
+                title: "Backups Export Report",
+                fileName: "backups_export",
+                columns: ["File Name", "Type", "Location", "Created At"],
+                rows:
+                  selectedBackups.length > 0
+                    ? selectedBackups
+                        .map((fileName) => {
+                          const backup = backups.find(
+                            (b) => b.fileName === fileName
+                          );
+                          return backup
+                            ? [
+                                backup.fileName,
+                                backup.backup_type === "restore"
+                                  ? "Restore"
+                                  : "Backup",
+                                backup.location || "-",
+                                formatFullDate(backup.created_at),
+                              ]
+                            : [];
+                        })
+                        .filter((row) => row.length > 0)
+                    : backups.map((backup) => [
+                        backup.fileName,
+                        backup.backup_type === "restore" ? "Restore" : "Backup",
+                        backup.location || "-",
+                        formatFullDate(backup.created_at),
+                      ]),
+              }}
+              printConfig={{
+                title: "Backups Report",
+                fileName: "backups_report",
+                columns: ["File Name", "Type", "Location", "Created At"],
+                rows:
+                  selectedBackups.length > 0
+                    ? selectedBackups
+                        .map((fileName) => {
+                          const backup = backups.find(
+                            (b) => b.fileName === fileName
+                          );
+                          return backup
+                            ? [
+                                backup.fileName,
+                                backup.backup_type === "restore"
+                                  ? "Restore"
+                                  : "Backup",
+                                backup.location || "-",
+                                formatFullDate(backup.created_at),
+                              ]
+                            : [];
+                        })
+                        .filter((row) => row.length > 0)
+                    : backups.map((backup) => [
+                        backup.fileName,
+                        backup.backup_type === "restore" ? "Restore" : "Backup",
+                        backup.location || "-",
+                        formatFullDate(backup.created_at),
+                      ]),
+              }}
+              onRefresh={loadBackups}
+              isRefreshing={loadingBackups}
+            />
           </div>
 
           {/* Updated Layout: Left (backup/restore cards) - Right (table) */}
@@ -562,7 +595,8 @@ const DatabaseBackup = () => {
                 </h2>
                 <div className="flex-1 space-y-4">
                   <p className="text-sm text-gray-600">
-                    Click the button below to create a new backup. You will be prompted to select where to save the backup file.
+                    Click the button below to create a new backup. You will be
+                    prompted to select where to save the backup file.
                   </p>
                   <button
                     onClick={handleBackup}
@@ -604,10 +638,7 @@ const DatabaseBackup = () => {
                             setRestoreFile(file);
                             setRestoreFileName(file.name);
                           } else {
-                            showMessage(
-                              "Please drop a .sql file",
-                              "error"
-                            );
+                            showMessage("Please drop a .sql file", "error");
                           }
                         }
                       }}
@@ -654,8 +685,6 @@ const DatabaseBackup = () => {
                       />
                     </div>
                   </div>
-
-
                 </div>
                 <div className="flex justify-end mt-6">
                   <button
@@ -700,14 +729,20 @@ const DatabaseBackup = () => {
                         { key: "fileName", label: "File Name", sortable: true },
                         { key: "backup_type", label: "Type", sortable: true },
                         { key: "location", label: "Location", sortable: true },
-                        { key: "created_at", label: "Created At", sortable: true },
+                        {
+                          key: "created_at",
+                          label: "Created At",
+                          sortable: true,
+                        },
                       ].map((col) => (
                         <th
                           key={col.key}
                           className={`px-3 py-2 border-b border-gray-300 ${
                             col.sortable ? "cursor-pointer" : ""
                           }`}
-                          onClick={col.sortable ? () => handleSort(col.key) : undefined}
+                          onClick={
+                            col.sortable ? () => handleSort(col.key) : undefined
+                          }
                         >
                           <div className="flex items-center gap-1">
                             {col.label} {col.sortable && getSortIcon(col.key)}
@@ -729,7 +764,9 @@ const DatabaseBackup = () => {
                             aria-live="polite"
                           >
                             <div className="w-8 h-8 mb-2 border-b-2 border-gray-900 rounded-full animate-spin"></div>
-                            <p className="text-sm text-gray-600">Loading backups...</p>
+                            <p className="text-sm text-gray-600">
+                              Loading backups...
+                            </p>
                           </div>
                         </td>
                       </tr>
@@ -769,7 +806,7 @@ const DatabaseBackup = () => {
                         const backupType = backup.backup_type || "backup";
                         const isBackup = backupType === "backup";
                         const isRestore = backupType === "restore";
-                        
+
                         return (
                           <tr
                             key={backup.fileName}
@@ -784,7 +821,9 @@ const DatabaseBackup = () => {
                             <td className="text-center px-3 py-2 border-b border-gray-300">
                               <input
                                 type="checkbox"
-                                checked={selectedBackups.includes(backup.fileName)}
+                                checked={selectedBackups.includes(
+                                  backup.fileName
+                                )}
                                 onChange={(e) => {
                                   e.stopPropagation();
                                   toggleSelect(backup.fileName);
@@ -806,11 +845,18 @@ const DatabaseBackup = () => {
                                     : "bg-gray-100 text-gray-800"
                                 }`}
                               >
-                                {isBackup ? "Backup" : isRestore ? "Restore" : backupType}
+                                {isBackup
+                                  ? "Backup"
+                                  : isRestore
+                                  ? "Restore"
+                                  : backupType}
                               </span>
                             </td>
                             <td className="px-3 py-2 border-b border-gray-300">
-                              <span className="truncate max-w-xs block text-gray-600" title={backup.location}>
+                              <span
+                                className="truncate max-w-xs block text-gray-600"
+                                title={backup.location}
+                              >
                                 {backup.location || "-"}
                               </span>
                             </td>
@@ -847,7 +893,6 @@ const DatabaseBackup = () => {
             </div>
           </div>
 
-
           <ConfirmationDialog
             open={restoreConfirm}
             title="Confirm Database Restore"
@@ -863,8 +908,7 @@ const DatabaseBackup = () => {
                   <li>Potentially cause data loss</li>
                 </ul>
                 <p className="text-sm">
-                  <strong>Backup to restore:</strong>{" "}
-                  {restoreFileName}
+                  <strong>Backup to restore:</strong> {restoreFileName}
                 </p>
                 <p className="mt-2">Are you sure you want to continue?</p>
               </div>
@@ -885,11 +929,15 @@ const DatabaseBackup = () => {
             title="Confirm Backup Creation"
             message={
               <div>
-                <p className="mb-2">You are about to create a database backup.</p>
+                <p className="mb-2">
+                  You are about to create a database backup.
+                </p>
                 <p className="mb-2 text-sm text-gray-600">
                   <strong>Backup location:</strong> {backupPath}
                 </p>
-                <p className="text-sm">This may take a few moments. Do you want to continue?</p>
+                <p className="text-sm">
+                  This may take a few moments. Do you want to continue?
+                </p>
               </div>
             }
             loading={processing && processingAction === "backup"}

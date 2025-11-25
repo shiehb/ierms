@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from "react";
 import InspectionMap from "./InspectionMap";
 import { setEstablishmentPolygon } from "../../services/api";
-import { useNotifications } from "../NotificationManager";
+import { useNotifications } from "../../hooks/useNotifications";
 import { X } from "lucide-react";
 
-export default function InspectionPolygonMap({ inspectionData, currentUser, onClose }) {
+export default function InspectionPolygonMap({
+  inspectionData,
+  currentUser,
+  onClose,
+}) {
   const notifications = useNotifications();
   const [loading, setLoading] = useState(false);
   const [establishment, setEstablishment] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [mapKey, setMapKey] = useState(0);
-  
+
   // Add state for pending polygon changes
   const [pendingPolygon, setPendingPolygon] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -27,24 +31,24 @@ export default function InspectionPolygonMap({ inspectionData, currentUser, onCl
   useEffect(() => {
     if (inspectionData?.establishments_detail?.[0]) {
       const establishmentData = inspectionData.establishments_detail[0];
-      
+
       // Ensure polygon is always an array
       let polygonData = establishmentData.polygon;
       if (!Array.isArray(polygonData)) {
-        console.warn('⚠️ Polygon data is not an array:', polygonData);
+        console.warn("⚠️ Polygon data is not an array:", polygonData);
         polygonData = [];
       }
-      
+
       setEstablishment({
         id: establishmentData.id,
         name: establishmentData.name,
         latitude: establishmentData.latitude,
         longitude: establishmentData.longitude,
-        polygon: polygonData
+        polygon: polygonData,
       });
-      
+
       // Force map refresh when establishment changes
-      setMapKey(prev => prev + 1);
+      setMapKey((prev) => prev + 1);
     }
   }, [inspectionData]);
 
@@ -55,20 +59,23 @@ export default function InspectionPolygonMap({ inspectionData, currentUser, onCl
     }
 
     if (!isValid) {
-      notifications.warning("Please fix polygon validation errors before saving", {
-        title: "Invalid Polygon"
-      });
+      notifications.warning(
+        "Please fix polygon validation errors before saving",
+        {
+          title: "Invalid Polygon",
+        }
+      );
       return;
     }
 
     setLoading(true);
     try {
       await setEstablishmentPolygon(establishment.id, polygonData);
-      
+
       // Update local establishment state
-      setEstablishment(prev => ({
+      setEstablishment((prev) => ({
         ...prev,
-        polygon: polygonData
+        polygon: polygonData,
       }));
 
       // Clear pending changes
@@ -76,16 +83,16 @@ export default function InspectionPolygonMap({ inspectionData, currentUser, onCl
       setHasUnsavedChanges(false);
 
       notifications.success("Polygon boundary updated successfully", {
-        title: "Polygon Saved"
+        title: "Polygon Saved",
       });
     } catch (error) {
       console.error("Error saving polygon:", error);
       notifications.error(
-        error.response?.data?.detail || 
-        error.message || 
-        "Failed to save polygon. Please try again.",
+        error.response?.data?.detail ||
+          error.message ||
+          "Failed to save polygon. Please try again.",
         {
-          title: "Save Error"
+          title: "Save Error",
         }
       );
     } finally {
@@ -111,8 +118,18 @@ export default function InspectionPolygonMap({ inspectionData, currentUser, onCl
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center text-gray-500">
-          <svg className="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          <svg
+            className="w-12 h-12 mx-auto mb-4 text-gray-300"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+            />
           </svg>
           <p className="text-sm">No establishment data available</p>
         </div>
@@ -125,8 +142,18 @@ export default function InspectionPolygonMap({ inspectionData, currentUser, onCl
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center text-gray-500">
-          <svg className="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          <svg
+            className="w-12 h-12 mx-auto mb-4 text-gray-300"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
           </svg>
           <p className="text-sm">Establishment coordinates not available</p>
           <p className="text-xs text-gray-400 mt-1">Cannot display map</p>
@@ -150,28 +177,53 @@ export default function InspectionPolygonMap({ inspectionData, currentUser, onCl
                   onClick={() => setIsEditMode(!isEditMode)}
                   className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
                     isEditMode
-                      ? 'bg-green-600 text-white hover:bg-green-700'
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                      ? "bg-green-600 text-white hover:bg-green-700"
+                      : "bg-blue-600 text-white hover:bg-blue-700"
                   }`}
                 >
                   {isEditMode ? (
                     <>
-                      <svg className="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      <svg
+                        className="w-3 h-3 inline mr-1"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                        />
                       </svg>
                       View Mode
                     </>
                   ) : (
                     <>
-                      <svg className="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      <svg
+                        className="w-3 h-3 inline mr-1"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                        />
                       </svg>
                       Edit Mode
                     </>
                   )}
                 </button>
-                
+
                 {/* Manual Save Button - only show in edit mode with changes */}
                 {isEditMode && hasUnsavedChanges && (
                   <button
@@ -186,8 +238,18 @@ export default function InspectionPolygonMap({ inspectionData, currentUser, onCl
                       </>
                     ) : (
                       <>
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        <svg
+                          className="w-3 h-3"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 13l4 4L19 7"
+                          />
                         </svg>
                         Save Polygon
                       </>
@@ -205,14 +267,16 @@ export default function InspectionPolygonMap({ inspectionData, currentUser, onCl
             </button>
           </div>
         </div>
-        <p className="text-sm text-gray-600">
-          {establishment.name}
-        </p>
+        <p className="text-sm text-gray-600">{establishment.name}</p>
         {canEditPolygon() && (
-          <p className={`text-xs mt-1 ${
-            isEditMode ? 'text-orange-600' : 'text-green-600'
-          }`}>
-            {isEditMode ? '✏️ Edit mode active - Draw or modify polygon, then click "Save Polygon"' : '✓ Click "Edit Mode" to modify boundary'}
+          <p
+            className={`text-xs mt-1 ${
+              isEditMode ? "text-orange-600" : "text-green-600"
+            }`}
+          >
+            {isEditMode
+              ? '✏️ Edit mode active - Draw or modify polygon, then click "Save Polygon"'
+              : '✓ Click "Edit Mode" to modify boundary'}
           </p>
         )}
         {!canEditPolygon() && currentUser?.userlevel && (
@@ -236,7 +300,9 @@ export default function InspectionPolygonMap({ inspectionData, currentUser, onCl
       <div className="flex-1 relative min-h-[400px]">
         {establishment ? (
           <InspectionMap
-            key={`inspection-map-${establishment.id}-${isEditMode ? 'edit' : 'view'}-${mapKey}`}
+            key={`inspection-map-${establishment.id}-${
+              isEditMode ? "edit" : "view"
+            }-${mapKey}`}
             establishment={establishment}
             onSave={handlePolygonChange}
             userRole={currentUser?.userlevel}

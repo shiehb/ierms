@@ -12,7 +12,7 @@ import {
 import { getEstablishments, getProfile } from "../../services/api";
 import PaginationControls from "../PaginationControls";
 import { useLocalStoragePagination } from "../../hooks/useLocalStoragePagination";
-import { useNotifications } from "../NotificationManager";
+import { useNotifications } from "../../hooks/useNotifications";
 import { canExportAndPrint } from "../../utils/permissions";
 import TableToolbar from "../common/TableToolbar";
 
@@ -111,18 +111,21 @@ export default function EstablishmentList({
       }
     } catch (err) {
       console.error("Error fetching establishments:", err);
-      notifications.error(
-        "Error fetching establishments",
-        {
-          title: "Fetch Error",
-          duration: 8000
-        }
-      );
+      notifications.error("Error fetching establishments", {
+        title: "Fetch Error",
+        duration: 8000,
+      });
     } finally {
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, pageSize, debouncedSearchQuery, provinceFilter, businessTypeFilter]);
+  }, [
+    currentPage,
+    pageSize,
+    debouncedSearchQuery,
+    provinceFilter,
+    businessTypeFilter,
+  ]);
 
   // Fetch user level on mount
   useEffect(() => {
@@ -131,9 +134,9 @@ export default function EstablishmentList({
         const profile = await getProfile();
         setUserLevel(profile.userlevel);
       } catch (error) {
-        console.error('Error fetching user profile:', error);
+        console.error("Error fetching user profile:", error);
         // Fallback to localStorage
-        setUserLevel(localStorage.getItem('userLevel') || null);
+        setUserLevel(localStorage.getItem("userLevel") || null);
       }
     };
     fetchUserLevel();
@@ -150,15 +153,18 @@ export default function EstablishmentList({
 
   // Handle highlighting from search navigation
   useEffect(() => {
-    if (location.state?.highlightId && location.state?.entityType === 'establishment') {
+    if (
+      location.state?.highlightId &&
+      location.state?.entityType === "establishment"
+    ) {
       setHighlightedEstId(location.state.highlightId);
-      
+
       // Scroll to highlighted row after render
       setTimeout(() => {
         if (highlightedRowRef.current) {
-          highlightedRowRef.current.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'center' 
+          highlightedRowRef.current.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
           });
         }
       }, 500);
@@ -185,7 +191,6 @@ export default function EstablishmentList({
       <ArrowDown size={14} />
     );
   };
-
 
   // Filter functions
   const toggleProvince = (province) => {
@@ -224,7 +229,8 @@ export default function EstablishmentList({
       const matchesProvince =
         provinceFilter.length === 0 || provinceFilter.includes(e.province);
       const matchesBusinessType =
-        businessTypeFilter.length === 0 || businessTypeFilter.includes(e.nature_of_business);
+        businessTypeFilter.length === 0 ||
+        businessTypeFilter.includes(e.nature_of_business);
       return matchesProvince && matchesBusinessType;
     });
 
@@ -245,7 +251,13 @@ export default function EstablishmentList({
     }
 
     return list;
-  }, [establishments, provinceFilter, businessTypeFilter, sortConfig, searchMode]);
+  }, [
+    establishments,
+    provinceFilter,
+    businessTypeFilter,
+    sortConfig,
+    searchMode,
+  ]);
 
   // Selection
   const toggleSelect = (id) => {
@@ -273,10 +285,13 @@ export default function EstablishmentList({
 
   const activeFilterCount = provinceFilter.length + businessTypeFilter.length;
   const hasActiveFilters =
-    searchQuery || provinceFilter.length > 0 || businessTypeFilter.length > 0 || sortConfig.key;
+    searchQuery ||
+    provinceFilter.length > 0 ||
+    businessTypeFilter.length > 0 ||
+    sortConfig.key;
 
   const provinces = ["LA UNION", "PANGASINAN", "ILOCOS SUR", "ILOCOS NORTE"];
-  
+
   // Get unique business types from establishments
   const businessTypes = useMemo(() => {
     return [
@@ -307,7 +322,7 @@ export default function EstablishmentList({
             </button>
           )}
         </div>
-        
+
         {/* Province Section */}
         <div className="mb-3">
           <div className="px-3 py-1 text-xs font-medium text-gray-600 uppercase tracking-wide">
@@ -346,7 +361,9 @@ export default function EstablishmentList({
                 key={businessType}
                 onClick={() => toggleBusinessType(businessType)}
                 className={`w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-100 transition-colors ${
-                  businessTypeFilter.includes(businessType) ? "bg-sky-50 font-medium" : ""
+                  businessTypeFilter.includes(businessType)
+                    ? "bg-sky-50 font-medium"
+                    : ""
                 }`}
               >
                 <div className="flex-1 text-left">
@@ -385,78 +402,123 @@ export default function EstablishmentList({
               if (fieldKey === null && directionKey === null) {
                 setSortConfig({ key: null, direction: null });
               } else {
-                setSortConfig({ key: fieldKey, direction: directionKey || "asc" });
+                setSortConfig({
+                  key: fieldKey,
+                  direction: directionKey || "asc",
+                });
               }
             }}
             onFilterClick={() => setFiltersOpen(!filtersOpen)}
             customFilterDropdown={filtersOpen ? customFiltersDropdown : null}
             filterOpen={filtersOpen}
             onFilterClose={() => setFiltersOpen(false)}
-            exportConfig={canExportAndPrint(userLevel, 'establishments') ? {
-              title: "Establishments Export Report",
-              fileName: "establishments_export",
-              columns: ["ID", "Name", "Nature of Business", "Province", "City", "Year Established", "Status"],
-              rows: selectedEstablishments.length > 0 ? 
-                selectedEstablishments.map(id => {
-                  const establishment = filteredEstablishments.find(e => e.id === id);
-                  return establishment ? [
-                    establishment.id,
-                    establishment.name,
-                    establishment.nature_of_business,
-                    establishment.province,
-                    establishment.city,
-                    establishment.year_established,
-                    "Active"
-                  ] : [];
-                }).filter(row => row.length > 0) : 
-                filteredEstablishments.map(establishment => [
-                  establishment.id,
-                  establishment.name,
-                  establishment.nature_of_business,
-                  establishment.province,
-                  establishment.city,
-                  establishment.year_established,
-                  "Active"
-                ])
-            } : null}
-            printConfig={canExportAndPrint(userLevel, 'establishments') ? {
-              title: "Establishments Report",
-              fileName: "establishments_report",
-              columns: ["ID", "Name", "Nature of Business", "Province", "City", "Year Established", "Status"],
-              rows: selectedEstablishments.length > 0 ? 
-                selectedEstablishments.map(id => {
-                  const establishment = filteredEstablishments.find(e => e.id === id);
-                  return establishment ? [
-                    establishment.id,
-                    establishment.name,
-                    establishment.nature_of_business,
-                    establishment.province,
-                    establishment.city,
-                    establishment.year_established,
-                    "Active"
-                  ] : [];
-                }).filter(row => row.length > 0) : 
-                filteredEstablishments.map(establishment => [
-                  establishment.id,
-                  establishment.name,
-                  establishment.nature_of_business,
-                  establishment.province,
-                  establishment.city,
-                  establishment.year_established,
-                  "Active"
-                ])
-            } : null}
+            exportConfig={
+              canExportAndPrint(userLevel, "establishments")
+                ? {
+                    title: "Establishments Export Report",
+                    fileName: "establishments_export",
+                    columns: [
+                      "ID",
+                      "Name",
+                      "Nature of Business",
+                      "Province",
+                      "City",
+                      "Year Established",
+                      "Status",
+                    ],
+                    rows:
+                      selectedEstablishments.length > 0
+                        ? selectedEstablishments
+                            .map((id) => {
+                              const establishment = filteredEstablishments.find(
+                                (e) => e.id === id
+                              );
+                              return establishment
+                                ? [
+                                    establishment.id,
+                                    establishment.name,
+                                    establishment.nature_of_business,
+                                    establishment.province,
+                                    establishment.city,
+                                    establishment.year_established,
+                                    "Active",
+                                  ]
+                                : [];
+                            })
+                            .filter((row) => row.length > 0)
+                        : filteredEstablishments.map((establishment) => [
+                            establishment.id,
+                            establishment.name,
+                            establishment.nature_of_business,
+                            establishment.province,
+                            establishment.city,
+                            establishment.year_established,
+                            "Active",
+                          ]),
+                  }
+                : null
+            }
+            printConfig={
+              canExportAndPrint(userLevel, "establishments")
+                ? {
+                    title: "Establishments Report",
+                    fileName: "establishments_report",
+                    columns: [
+                      "ID",
+                      "Name",
+                      "Nature of Business",
+                      "Province",
+                      "City",
+                      "Year Established",
+                      "Status",
+                    ],
+                    rows:
+                      selectedEstablishments.length > 0
+                        ? selectedEstablishments
+                            .map((id) => {
+                              const establishment = filteredEstablishments.find(
+                                (e) => e.id === id
+                              );
+                              return establishment
+                                ? [
+                                    establishment.id,
+                                    establishment.name,
+                                    establishment.nature_of_business,
+                                    establishment.province,
+                                    establishment.city,
+                                    establishment.year_established,
+                                    "Active",
+                                  ]
+                                : [];
+                            })
+                            .filter((row) => row.length > 0)
+                        : filteredEstablishments.map((establishment) => [
+                            establishment.id,
+                            establishment.name,
+                            establishment.nature_of_business,
+                            establishment.province,
+                            establishment.city,
+                            establishment.year_established,
+                            "Active",
+                          ]),
+                  }
+                : null
+            }
             onRefresh={fetchData}
             isRefreshing={loading}
-            additionalActions={canEditEstablishments ? [
-              {
-                onClick: onAdd,
-                icon: Plus,
-                title: "Add Establishment",
-                text: "Add Establishment",
-                variant: "primary"
-              }
-            ] : []}
+            additionalActions={
+              canEditEstablishments
+                ? [
+                    {
+                      onClick: onAdd,
+                      icon: Plus,
+                      title: "Add Establishment",
+                      text: "Add Establishment",
+                      variant: "primary",
+                    },
+                  ]
+                : []
+            }
           />
         </div>
       </div>
@@ -496,7 +558,9 @@ export default function EstablishmentList({
               <th className="px-3 py-2 text-center border-b border-gray-300">
                 Coordinates
               </th>
-              <th className="px-3 py-2 border-b border-gray-300">Nature of Business</th>
+              <th className="px-3 py-2 border-b border-gray-300">
+                Nature of Business
+              </th>
               <th
                 className="px-3 py-2 text-center border-b border-gray-300 cursor-pointer"
                 onClick={() => handleSort("year_established")}
@@ -557,7 +621,7 @@ export default function EstablishmentList({
                   key={e.id}
                   ref={e.id === highlightedEstId ? highlightedRowRef : null}
                   className={`text-xs border-b border-gray-300 hover:bg-gray-50 transition-colors ${
-                    e.id === highlightedEstId ? 'search-highlight-persist' : ''
+                    e.id === highlightedEstId ? "search-highlight-persist" : ""
                   }`}
                   onClick={() => setHighlightedEstId(e.id)}
                 >
@@ -623,24 +687,23 @@ export default function EstablishmentList({
         </table>
       </div>
       <div className="mt-2">
-      {/* Pagination */}
-      <PaginationControls
-        currentPage={currentPage}
-        totalPages={totalPages}
-        pageSize={pageSize}
-        totalItems={totalCount}
-        hasActiveFilters={searchMode && debouncedSearchQuery}
-        onPageChange={goToPage}
-        onPageSizeChange={(newSize) => {
-          setPageSize(newSize);
-          setCurrentPage(1);
-        }}
-        startItem={startItem}
-        endItem={endItem}
-        storageKey="establishments_list"
-      />
+        {/* Pagination */}
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          totalItems={totalCount}
+          hasActiveFilters={searchMode && debouncedSearchQuery}
+          onPageChange={goToPage}
+          onPageSizeChange={(newSize) => {
+            setPageSize(newSize);
+            setCurrentPage(1);
+          }}
+          startItem={startItem}
+          endItem={endItem}
+          storageKey="establishments_list"
+        />
       </div>
-
     </div>
   );
 }

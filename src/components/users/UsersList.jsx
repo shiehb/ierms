@@ -14,7 +14,7 @@ import {
 import { useLocation } from "react-router-dom";
 import api, { toggleUserActive, getProfile } from "../../services/api";
 import ConfirmationDialog from "../common/ConfirmationDialog";
-import { useNotifications } from "../NotificationManager";
+import { useNotifications } from "../../hooks/useNotifications";
 import PaginationControls from "../PaginationControls";
 import { useLocalStoragePagination } from "../../hooks/useLocalStoragePagination";
 import { canExportAndPrint } from "../../utils/permissions";
@@ -206,9 +206,9 @@ export default function UsersList({ onAdd, onEdit, refreshTrigger }) {
         const profile = await getProfile();
         setUserLevel(profile.userlevel);
       } catch (error) {
-        console.error('Error fetching user profile:', error);
+        console.error("Error fetching user profile:", error);
         // Fallback to localStorage
-        setUserLevel(localStorage.getItem('userLevel') || null);
+        setUserLevel(localStorage.getItem("userLevel") || null);
       }
     };
     fetchUserLevel();
@@ -221,15 +221,15 @@ export default function UsersList({ onAdd, onEdit, refreshTrigger }) {
 
   // Handle highlighting from search navigation
   useEffect(() => {
-    if (location.state?.highlightId && location.state?.entityType === 'user') {
+    if (location.state?.highlightId && location.state?.entityType === "user") {
       setHighlightedUserId(location.state.highlightId);
-      
+
       // Scroll to highlighted row after render
       setTimeout(() => {
         if (highlightedRowRef.current) {
-          highlightedRowRef.current.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'center' 
+          highlightedRowRef.current.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
           });
         }
       }, 500);
@@ -400,7 +400,6 @@ export default function UsersList({ onAdd, onEdit, refreshTrigger }) {
     setCurrentPage(1);
   };
 
-
   // Pagination functions
   const goToPage = (page) => {
     setCurrentPage(Math.max(1, Math.min(page, totalPages)));
@@ -467,7 +466,9 @@ export default function UsersList({ onAdd, onEdit, refreshTrigger }) {
               }`}
             >
               <div className="flex-1 text-left">
-                <div className="font-medium">{userRoleDisplayNames[role] || role}</div>
+                <div className="font-medium">
+                  {userRoleDisplayNames[role] || role}
+                </div>
               </div>
               {roleFilter.includes(role) && (
                 <div className="w-2 h-2 bg-sky-600 rounded-full"></div>
@@ -523,7 +524,10 @@ export default function UsersList({ onAdd, onEdit, refreshTrigger }) {
               if (fieldKey === null && directionKey === null) {
                 setSortConfig({ key: null, direction: null });
               } else {
-                setSortConfig({ key: fieldKey, direction: directionKey || "asc" });
+                setSortConfig({
+                  key: fieldKey,
+                  direction: directionKey || "asc",
+                });
               }
             }}
             onFilterClick={() => setFiltersOpen(!filtersOpen)}
@@ -534,58 +538,84 @@ export default function UsersList({ onAdd, onEdit, refreshTrigger }) {
             dateTo={dateTo}
             onDateFromChange={setDateFrom}
             onDateToChange={setDateTo}
-            exportConfig={canExportAndPrint(userLevel, 'users') ? {
-              title: "Users Export Report",
-              fileName: "users_export",
-              columns: ["ID", "Name", "Email", "User Level", "Section", "Status", "Date Created"],
-              rows: selectedUsers.length > 0 ? 
-                filteredUsers
-                  .filter(user => selectedUsers.includes(user.id))
-                  .map(user => [
-                    user.id,
-                    `${user.first_name} ${user.last_name}`,
-                    user.email,
-                    user.userlevel,
-                    user.section || "N/A",
-                    user.is_active ? "Active" : "Inactive",
-                    new Date(user.date_joined).toLocaleDateString()
-                  ]) : 
-                filteredUsers.map(user => [
-                  user.id,
-                  `${user.first_name} ${user.last_name}`,
-                  user.email,
-                  user.userlevel,
-                  user.section || "N/A",
-                  user.is_active ? "Active" : "Inactive",
-                  new Date(user.date_joined).toLocaleDateString()
-                ])
-            } : null}
-            printConfig={canExportAndPrint(userLevel, 'users') ? {
-              title: "Users Report",
-              fileName: "users_report",
-              columns: ["ID", "Name", "Email", "User Level", "Section", "Status", "Date Created"],
-              rows: selectedUsers.length > 0 ? 
-                filteredUsers
-                  .filter(user => selectedUsers.includes(user.id))
-                  .map(user => [
-                    user.id,
-                    `${user.first_name} ${user.last_name}`,
-                    user.email,
-                    user.userlevel,
-                    user.section || "N/A",
-                    user.is_active ? "Active" : "Inactive",
-                    new Date(user.date_joined).toLocaleDateString()
-                  ]) : 
-                filteredUsers.map(user => [
-                  user.id,
-                  `${user.first_name} ${user.last_name}`,
-                  user.email,
-                  user.userlevel,
-                  user.section || "N/A",
-                  user.is_active ? "Active" : "Inactive",
-                  new Date(user.date_joined).toLocaleDateString()
-                ])
-            } : null}
+            exportConfig={
+              canExportAndPrint(userLevel, "users")
+                ? {
+                    title: "Users Export Report",
+                    fileName: "users_export",
+                    columns: [
+                      "ID",
+                      "Name",
+                      "Email",
+                      "User Level",
+                      "Section",
+                      "Status",
+                      "Date Created",
+                    ],
+                    rows:
+                      selectedUsers.length > 0
+                        ? filteredUsers
+                            .filter((user) => selectedUsers.includes(user.id))
+                            .map((user) => [
+                              user.id,
+                              `${user.first_name} ${user.last_name}`,
+                              user.email,
+                              user.userlevel,
+                              user.section || "N/A",
+                              user.is_active ? "Active" : "Inactive",
+                              new Date(user.date_joined).toLocaleDateString(),
+                            ])
+                        : filteredUsers.map((user) => [
+                            user.id,
+                            `${user.first_name} ${user.last_name}`,
+                            user.email,
+                            user.userlevel,
+                            user.section || "N/A",
+                            user.is_active ? "Active" : "Inactive",
+                            new Date(user.date_joined).toLocaleDateString(),
+                          ]),
+                  }
+                : null
+            }
+            printConfig={
+              canExportAndPrint(userLevel, "users")
+                ? {
+                    title: "Users Report",
+                    fileName: "users_report",
+                    columns: [
+                      "ID",
+                      "Name",
+                      "Email",
+                      "User Level",
+                      "Section",
+                      "Status",
+                      "Date Created",
+                    ],
+                    rows:
+                      selectedUsers.length > 0
+                        ? filteredUsers
+                            .filter((user) => selectedUsers.includes(user.id))
+                            .map((user) => [
+                              user.id,
+                              `${user.first_name} ${user.last_name}`,
+                              user.email,
+                              user.userlevel,
+                              user.section || "N/A",
+                              user.is_active ? "Active" : "Inactive",
+                              new Date(user.date_joined).toLocaleDateString(),
+                            ])
+                        : filteredUsers.map((user) => [
+                            user.id,
+                            `${user.first_name} ${user.last_name}`,
+                            user.email,
+                            user.userlevel,
+                            user.section || "N/A",
+                            user.is_active ? "Active" : "Inactive",
+                            new Date(user.date_joined).toLocaleDateString(),
+                          ]),
+                  }
+                : null
+            }
             onRefresh={fetchAllUsers}
             isRefreshing={loading}
             additionalActions={[
@@ -594,187 +624,204 @@ export default function UsersList({ onAdd, onEdit, refreshTrigger }) {
                 icon: Plus,
                 title: "Add User",
                 text: "Add User",
-                variant: "primary"
-              }
+                variant: "primary",
+              },
             ]}
           />
         </div>
       </div>
 
-       {/* Table */}
-       <div className="overflow-y-auto h-[calc(100vh-260px)] border border-gray-300 rounded scroll-smooth custom-scrollbar">
-         <table className="w-full">
-           <thead>
-             <tr className="text-xs text-left text-white bg-gradient-to-r from-sky-600 to-sky-700 sticky top-0 z-10">
-             <th className="w-6 px-3 py-2 text-center border-b border-gray-300">
-               <input
-                 type="checkbox"
-                 checked={
-                   selectedUsers.length > 0 &&
-                   selectedUsers.length === users.length
-                 }
-                 onChange={toggleSelectAll}
-               />
-             </th>
-             {[
-               { key: "user", label: "User", sortable: true },
-               { key: "userlevel", label: "Role", sortable: false },
-               { key: "is_active", label: "Status", sortable: false },
-               { key: "date_joined", label: "Created Date", sortable: true },
-             ].map((col) => (
-               <th
-                 key={col.key}
-                 className={`px-3 py-2 border-b border-gray-300 ${
-                   col.sortable ? "cursor-pointer" : ""
-                 } ${col.key === "is_active" ? "text-center" : ""}`}
-                 onClick={col.sortable ? () => handleSort(col.key) : undefined}
-               >
-                 <div className={`flex items-center gap-1 ${col.key === "is_active" ? "justify-center" : ""}`}>
-                   {col.label} {col.sortable && getSortIcon(col.key)}
-                 </div>
-               </th>
-             ))}
+      {/* Table */}
+      <div className="overflow-y-auto h-[calc(100vh-260px)] border border-gray-300 rounded scroll-smooth custom-scrollbar">
+        <table className="w-full">
+          <thead>
+            <tr className="text-xs text-left text-white bg-gradient-to-r from-sky-600 to-sky-700 sticky top-0 z-10">
+              <th className="w-6 px-3 py-2 text-center border-b border-gray-300">
+                <input
+                  type="checkbox"
+                  checked={
+                    selectedUsers.length > 0 &&
+                    selectedUsers.length === users.length
+                  }
+                  onChange={toggleSelectAll}
+                />
+              </th>
+              {[
+                { key: "user", label: "User", sortable: true },
+                { key: "userlevel", label: "Role", sortable: false },
+                { key: "is_active", label: "Status", sortable: false },
+                { key: "date_joined", label: "Created Date", sortable: true },
+              ].map((col) => (
+                <th
+                  key={col.key}
+                  className={`px-3 py-2 border-b border-gray-300 ${
+                    col.sortable ? "cursor-pointer" : ""
+                  } ${col.key === "is_active" ? "text-center" : ""}`}
+                  onClick={col.sortable ? () => handleSort(col.key) : undefined}
+                >
+                  <div
+                    className={`flex items-center gap-1 ${
+                      col.key === "is_active" ? "justify-center" : ""
+                    }`}
+                  >
+                    {col.label} {col.sortable && getSortIcon(col.key)}
+                  </div>
+                </th>
+              ))}
 
-             <th className="px-3 py-2 text-right border-b border-gray-300 w-10">
-               Actions
-             </th>
-           </tr>
-         </thead>
-         <tbody>
-           {loading ? (
-             <tr>
-               <td
-                 colSpan="6"
-                 className="px-2 py-8 text-center border-b border-gray-300"
-               >
-                 <div
-                   className="flex flex-col items-center justify-center p-4"
-                   role="status"
-                   aria-live="polite"
-                 >
-                   <div className="w-8 h-8 mb-2 border-b-2 border-gray-900 rounded-full animate-spin"></div>
-                   <p className="text-sm text-gray-600">Loading users...</p>
-                 </div>
-               </td>
-             </tr>
-           ) : users.length === 0 ? (
-             <tr>
-              <td
-                colSpan="6"
-                className="px-2 py-4 text-center h-[calc(100vh-295px)] text-gray-500 border-b border-gray-300"
-              >
-                <div className="flex flex-col items-center justify-center h-full gap-2">
-                  {hasActiveFilters ? (
-                    <>
-                      <span>No users found matching your criteria.</span>
-                      <button
-                        onClick={clearAllFilters}
-                        className="underline text-sky-600 hover:text-sky-700"
+              <th className="px-3 py-2 text-right border-b border-gray-300 w-10">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td
+                  colSpan="6"
+                  className="px-2 py-8 text-center border-b border-gray-300"
+                >
+                  <div
+                    className="flex flex-col items-center justify-center p-4"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <div className="w-8 h-8 mb-2 border-b-2 border-gray-900 rounded-full animate-spin"></div>
+                    <p className="text-sm text-gray-600">Loading users...</p>
+                  </div>
+                </td>
+              </tr>
+            ) : users.length === 0 ? (
+              <tr>
+                <td
+                  colSpan="6"
+                  className="px-2 py-4 text-center h-[calc(100vh-295px)] text-gray-500 border-b border-gray-300"
+                >
+                  <div className="flex flex-col items-center justify-center h-full gap-2">
+                    {hasActiveFilters ? (
+                      <>
+                        <span>No users found matching your criteria.</span>
+                        <button
+                          onClick={clearAllFilters}
+                          className="underline text-sky-600 hover:text-sky-700"
+                        >
+                          Clear all filters
+                        </button>
+                      </>
+                    ) : (
+                      <span>No users found.</span>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              users.map((u) => (
+                <tr
+                  key={u.id}
+                  ref={u.id === highlightedUserId ? highlightedRowRef : null}
+                  className={`text-xs border-b border-gray-300 hover:bg-gray-50 transition-colors ${
+                    u.id === highlightedUserId ? "search-highlight-persist" : ""
+                  }`}
+                  onClick={() => setHighlightedUserId(u.id)}
+                >
+                  <td className="text-center px-3 py-2 border-b border-gray-300">
+                    <input
+                      type="checkbox"
+                      checked={selectedUsers.includes(u.id)}
+                      onChange={() => toggleSelect(u.id)}
+                    />
+                  </td>
+                  <td className="px-3 py-2 border-b border-gray-300">
+                    <div className="flex items-center gap-2">
+                      {/* Avatar */}
+                      <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 flex-shrink-0 flex items-center justify-center">
+                        {u.avatar ? (
+                          <img
+                            src={
+                              u.avatar.startsWith("http")
+                                ? u.avatar
+                                : u.avatar.startsWith("/")
+                                ? `${window.location.origin}${u.avatar}`
+                                : `${api.defaults.baseURL.replace(
+                                    "/api/",
+                                    ""
+                                  )}${u.avatar}`
+                            }
+                            alt={`${u.first_name} ${u.last_name}`}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <User className="w-6 h-6 text-gray-400" />
+                        )}
+                      </div>
+                      {/* Name and Email */}
+                      <div className="flex flex-col min-w-0 flex-1">
+                        <span className="font-semibold truncate">
+                          {`${u.first_name}${
+                            u.middle_name ? ` ${u.middle_name}` : ""
+                          } ${u.last_name}`}
+                        </span>
+                        <span className="text-xs text-gray-600 truncate">
+                          {u.email}
+                        </span>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-3 py-2 border-b border-gray-300">
+                    {getRoleDisplay(u.userlevel, u.section)}
+                  </td>
+                  <td className="px-3 py-2 text-center border-b border-gray-300 w-35">
+                    {u.is_active ? (
+                      <span
+                        className="inline-flex items-center gap-1 px-2 py-0.5 text-xs w-18
+                     "
                       >
-                        Clear all filters
-                      </button>
-                    </>
-                  ) : (
-                    <span>No users found.</span>
-                  )}
-                </div>
-              </td>
-             </tr>
-          ) : (
-            users.map((u) => (
-              <tr
-                key={u.id}
-                ref={u.id === highlightedUserId ? highlightedRowRef : null}
-                className={`text-xs border-b border-gray-300 hover:bg-gray-50 transition-colors ${
-                  u.id === highlightedUserId ? 'search-highlight-persist' : ''
-                }`}
-                onClick={() => setHighlightedUserId(u.id)}
-              >
-                 <td className="text-center px-3 py-2 border-b border-gray-300">
-                   <input
-                     type="checkbox"
-                     checked={selectedUsers.includes(u.id)}
-                     onChange={() => toggleSelect(u.id)}
-                   />
-                 </td>
-                 <td className="px-3 py-2 border-b border-gray-300">
-                   <div className="flex items-center gap-2">
-                     {/* Avatar */}
-                     <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 flex-shrink-0 flex items-center justify-center">
-                       {u.avatar ? (
-                         <img
-                           src={u.avatar.startsWith('http') ? u.avatar : u.avatar.startsWith('/') ? `${window.location.origin}${u.avatar}` : `${api.defaults.baseURL.replace('/api/', '')}${u.avatar}`}
-                           alt={`${u.first_name} ${u.last_name}`}
-                           className="w-full h-full object-cover"
-                         />
-                       ) : (
-                         <User className="w-6 h-6 text-gray-400" />
-                       )}
-                     </div>
-                     {/* Name and Email */}
-                     <div className="flex flex-col min-w-0 flex-1">
-                       <span className="font-semibold truncate">
-                         {`${u.first_name}${u.middle_name ? ` ${u.middle_name}` : ''} ${u.last_name}`}
-                       </span>
-                       <span className="text-xs text-gray-600 truncate">{u.email}</span>
-                     </div>
-                   </div>
-                 </td>
-                 <td className="px-3 py-2 border-b border-gray-300">
-                   {getRoleDisplay(u.userlevel, u.section)}
-                 </td>
-                 <td className="px-3 py-2 text-center border-b border-gray-300 w-35">
-                   {u.is_active ? (
-                     <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs w-18
-                     ">
-                       <span className="w-2 h-2 bg-green-500 rounded-full" />
-                       <span >Active</span>
-                     </span>
-                   ) : (
-                     <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs w-18 ">
-                       <span className="w-2 h-2 bg-red-500 rounded-full" />
-                       <span >Inactive</span>
-                     </span>
-                   )}
-                 </td>
-                 <td className="px-3 py-2 border-b border-gray-300">
-                   {formatFullDate(u.date_joined)}
-                 </td>
-                 <td className="px-3 py-2 text-right border-b border-gray-300">
-                   <ActionButtons
-                     user={u}
-                     onEdit={onEdit}
-                     onToggleStatus={toggleUserActive}
-                     onStatusChange={fetchAllUsers}
-                   />
-                 </td>
-               </tr>
-             ))
-           )}
-         </tbody>
-         </table>
-       </div>
-       <div className="mt-2">
-       {/* Pagination Controls */}
-       <PaginationControls
-         currentPage={currentPage}
-         totalPages={totalPages}
-         pageSize={pageSize}
-         totalItems={totalUsers}
-         filteredItems={filteredCount}
-         hasActiveFilters={hasActiveFilters}
-         onPageChange={goToPage}
-         onPageSizeChange={(newSize) => {
-           setPageSize(newSize);
-           setCurrentPage(1);
-         }}
-         startItem={startItem}
-         endItem={endItem}
-         storageKey="users_list"
-       />
-       </div>
-
-
+                        <span className="w-2 h-2 bg-green-500 rounded-full" />
+                        <span>Active</span>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs w-18 ">
+                        <span className="w-2 h-2 bg-red-500 rounded-full" />
+                        <span>Inactive</span>
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2 border-b border-gray-300">
+                    {formatFullDate(u.date_joined)}
+                  </td>
+                  <td className="px-3 py-2 text-right border-b border-gray-300">
+                    <ActionButtons
+                      user={u}
+                      onEdit={onEdit}
+                      onToggleStatus={toggleUserActive}
+                      onStatusChange={fetchAllUsers}
+                    />
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+      <div className="mt-2">
+        {/* Pagination Controls */}
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          totalItems={totalUsers}
+          filteredItems={filteredCount}
+          hasActiveFilters={hasActiveFilters}
+          onPageChange={goToPage}
+          onPageSizeChange={(newSize) => {
+            setPageSize(newSize);
+            setCurrentPage(1);
+          }}
+          startItem={startItem}
+          endItem={endItem}
+          storageKey="users_list"
+        />
+      </div>
     </div>
   );
 }
@@ -845,7 +892,7 @@ function ActionButtons({ user, onEdit, onToggleStatus, onStatusChange }) {
         `User ${user.is_active ? "deactivated" : "activated"} successfully!`,
         {
           title: "User Status Updated",
-          duration: 4000
+          duration: 4000,
         }
       );
     } catch (error) {
@@ -856,7 +903,7 @@ function ActionButtons({ user, onEdit, onToggleStatus, onStatusChange }) {
         }`,
         {
           title: "Status Update Failed",
-          duration: 8000
+          duration: 8000,
         }
       );
     } finally {
@@ -894,30 +941,30 @@ function ActionButtons({ user, onEdit, onToggleStatus, onStatusChange }) {
               className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer w-full text-left transition-colors"
             >
               <Pencil size={16} className="text-sky-600" />
-        <span>Edit</span>
-      </button>
+              <span>Edit</span>
+            </button>
 
             {/* Activate/Deactivate option */}
-      <button
-        onClick={handleStatusClick}
+            <button
+              onClick={handleStatusClick}
               className={`flex items-center gap-2 px-4 py-2 text-sm cursor-pointer w-full text-left transition-colors ${
-          user.is_active
+                user.is_active
                   ? "text-red-700 hover:bg-red-50"
                   : "text-green-700 hover:bg-green-50"
-        }`}
-      >
-        {user.is_active ? (
-          <>
+              }`}
+            >
+              {user.is_active ? (
+                <>
                   <UserX size={16} className="text-red-600" />
-            <span>Deactivate</span>
-          </>
-        ) : (
-          <>
+                  <span>Deactivate</span>
+                </>
+              ) : (
+                <>
                   <UserCheck size={16} className="text-green-600" />
-            <span>Activate</span>
-          </>
-        )}
-      </button>
+                  <span>Activate</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
       )}

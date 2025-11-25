@@ -2,14 +2,13 @@
 API views for help content management.
 """
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework import status
 from django.http import JsonResponse, FileResponse
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from django.conf import settings
-from system_config.permissions import IsSystemAdmin
 from audit.utils import log_activity
 from audit.constants import AUDIT_ACTIONS, AUDIT_MODULES
 from .utils import (
@@ -56,7 +55,7 @@ def get_categories(request):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated, IsSystemAdmin])
+@permission_classes([IsAuthenticated, IsAdminUser])
 def save_topics(request):
     """Save help topics (admin only)."""
     try:
@@ -183,7 +182,7 @@ def save_topics(request):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated, IsSystemAdmin])
+@permission_classes([IsAuthenticated, IsAdminUser])
 def save_categories(request):
     """Save help categories (admin only)."""
     try:
@@ -306,7 +305,7 @@ def save_categories(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated, IsSystemAdmin])
+@permission_classes([IsAuthenticated, IsAdminUser])
 def export_backup(request):
     """Export help data as ZIP archive with images (admin only)."""
     try:
@@ -380,7 +379,7 @@ def export_backup(request):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated, IsSystemAdmin])
+@permission_classes([IsAuthenticated, IsAdminUser])
 def restore_backup(request):
     """Import help data from JSON or ZIP archive (admin only)."""
     try:
@@ -509,7 +508,7 @@ def restore_backup(request):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated, IsSystemAdmin])
+@permission_classes([IsAuthenticated, IsAdminUser])
 def upload_help_image(request):
     """Upload an image for help content (admin only)."""
     try:

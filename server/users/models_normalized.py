@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.utils import timezone
 from django.core.exceptions import ValidationError
-from system_config.models import SystemConfiguration
+from core.settings import generate_secure_password
 
 
 class UserManager(BaseUserManager):
@@ -11,8 +11,8 @@ class UserManager(BaseUserManager):
             raise ValueError("Email is required")
         email = self.normalize_email(email)
         if not password:
-            # Use auto-generated password from system_config
-            password = SystemConfiguration.generate_default_password()
+            # Use auto-generated password
+            password = generate_secure_password()
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)

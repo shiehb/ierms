@@ -16,9 +16,7 @@ from django.core.cache import cache
 from django.utils import timezone
 from django.db.models import Q
 from django.utils.dateparse import parse_datetime
-
-# Import from system_config for password generation
-# from system_config.models import SystemConfiguration  # No longer needed in views
+from core.settings import generate_secure_password
 
 # Notifications
 from notifications.models import Notification
@@ -277,23 +275,18 @@ class RegisterView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        # Validate email configuration before creating user
-        from system_config.models import SystemConfiguration
+        # Validate email configuration from environment variables
+        import os
         
-        try:
-            config = SystemConfiguration.get_active_config()
-            
-            # Check if email settings are configured
-            if not all([config.email_host, config.email_port, config.email_host_user, 
-                       config.email_host_password, config.default_from_email]):
-                return Response({
-                    'detail': 'Email configuration is incomplete. Please configure email settings in System Configuration before creating users.',
-                    'error_code': 'EMAIL_NOT_CONFIGURED'
-                }, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
+        email_host = os.getenv("EMAIL_HOST_USER")
+        email_password = os.getenv("EMAIL_HOST_PASSWORD")
+        default_from_email = os.getenv("DEFAULT_FROM_EMAIL")
+        
+        # Check if email settings are configured
+        if not all([email_host, email_password, default_from_email]):
             return Response({
-                'detail': 'System configuration not found. Please set up email configuration first.',
-                'error_code': 'CONFIG_NOT_FOUND'
+                'detail': 'Email configuration is incomplete. Please contact your system administrator to configure email settings.',
+                'error_code': 'EMAIL_NOT_CONFIGURED'
             }, status=status.HTTP_400_BAD_REQUEST)
         
         data = request.data.copy()
@@ -523,11 +516,10 @@ class UserUpdateView(generics.RetrieveUpdateAPIView):
         
         # If email changed, generate new password and send credentials
         if email_changed:
-            from system_config.models import SystemConfiguration
             from .utils.email_utils import send_welcome_email
             
             # Generate new password
-            new_password = SystemConfiguration.generate_default_password()
+            new_password = generate_secure_password()
             
             # Set the new password
             user.set_password(new_password)

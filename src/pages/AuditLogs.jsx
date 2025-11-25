@@ -54,14 +54,10 @@ const DEFAULT_PAGE_SIZE = 25;
 const COLUMN_COUNT = 6;
 const BUTTON_BASE =
   "inline-flex items-center justify-center gap-2 rounded px-3 py-1 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-60";
-const BUTTON_SUBTLE =
-  `${BUTTON_BASE} border border-gray-200 text-gray-700 shadow-sm hover:bg-gray-50 focus:ring-sky-500`;
-const BUTTON_MUTED =
-  `${BUTTON_BASE} border border-gray-200 text-gray-700 shadow-sm hover:bg-gray-50 focus:ring-sky-500`;
-const BUTTON_PRIMARY =
-  `${BUTTON_BASE} bg-sky-600 text-white shadow-sm hover:bg-sky-700 focus:ring-sky-500`;
-const BUTTON_ACCENT =
-  `${BUTTON_BASE} bg-sky-600 text-white shadow-sm hover:bg-sky-700 focus:ring-sky-500`;
+const BUTTON_SUBTLE = `${BUTTON_BASE} border border-gray-200 text-gray-700 shadow-sm hover:bg-gray-50 focus:ring-sky-500`;
+const BUTTON_MUTED = `${BUTTON_BASE} border border-gray-200 text-gray-700 shadow-sm hover:bg-gray-50 focus:ring-sky-500`;
+const BUTTON_PRIMARY = `${BUTTON_BASE} bg-sky-600 text-white shadow-sm hover:bg-sky-700 focus:ring-sky-500`;
+const BUTTON_ACCENT = `${BUTTON_BASE} bg-sky-600 text-white shadow-sm hover:bg-sky-700 focus:ring-sky-500`;
 
 function normalizeAction(action) {
   if (!action) return "Unknown";
@@ -164,7 +160,10 @@ function getBeforeAfter(log) {
 
 export default function AuditLogs() {
   const storageKey = "audit_logs";
-  const savedPagination = useLocalStoragePagination(storageKey, DEFAULT_PAGE_SIZE);
+  const savedPagination = useLocalStoragePagination(
+    storageKey,
+    DEFAULT_PAGE_SIZE
+  );
 
   const [filters, setFilters] = useState(INITIAL_FILTERS);
   const [appliedFilters, setAppliedFilters] = useState(INITIAL_FILTERS);
@@ -181,18 +180,18 @@ export default function AuditLogs() {
 
   const persistPagination = useCallback(
     (nextPage, nextPageSize = pageSize) => {
-    try {
-      localStorage.setItem(
-        `${storageKey}_pagination`,
-        JSON.stringify({
-          page: Math.max(1, nextPage),
-          pageSize: Math.max(10, Math.min(100, nextPageSize)),
-          timestamp: Date.now(),
-        })
-      );
-    } catch (error) {
-      console.warn("Failed to save audit pagination:", error);
-    }
+      try {
+        localStorage.setItem(
+          `${storageKey}_pagination`,
+          JSON.stringify({
+            page: Math.max(1, nextPage),
+            pageSize: Math.max(10, Math.min(100, nextPageSize)),
+            timestamp: Date.now(),
+          })
+        );
+      } catch (error) {
+        console.warn("Failed to save audit pagination:", error);
+      }
     },
     [pageSize, storageKey]
   );
@@ -241,7 +240,11 @@ export default function AuditLogs() {
           setTotalCount(data.length);
         } else {
           setLogs(data.results || []);
-          setTotalCount(typeof data.count === "number" ? data.count : (data.results || []).length);
+          setTotalCount(
+            typeof data.count === "number"
+              ? data.count
+              : (data.results || []).length
+          );
         }
       } catch (err) {
         if (!isMounted) return;
@@ -337,7 +340,9 @@ export default function AuditLogs() {
         throw exportError;
       }
 
-      const rows = Array.isArray(exportData) ? exportData : exportData.results || [];
+      const rows = Array.isArray(exportData)
+        ? exportData
+        : exportData.results || [];
 
       if (rows.length === 0) {
         throw new Error("No audit logs found for export.");
@@ -367,7 +372,8 @@ export default function AuditLogs() {
         ];
 
         if (before || after) {
-          headers.includes("Before Data") || headers.push("Before Data", "After Data");
+          headers.includes("Before Data") ||
+            headers.push("Before Data", "After Data");
           details.push(
             before ? JSON.stringify(before) : "",
             after ? JSON.stringify(after) : ""
@@ -404,7 +410,8 @@ export default function AuditLogs() {
     } catch (err) {
       console.error("Failed to export CSV", err);
       setError(
-        err?.message || "Failed to export CSV. Please try again or adjust filters."
+        err?.message ||
+          "Failed to export CSV. Please try again or adjust filters."
       );
     } finally {
       setIsExporting(false);
@@ -419,10 +426,15 @@ export default function AuditLogs() {
     if (loading) {
       return (
         <tr>
-          <td colSpan={COLUMN_COUNT} className="px-4 py-12 text-center text-gray-500">
+          <td
+            colSpan={COLUMN_COUNT}
+            className="px-4 py-12 text-center text-gray-500"
+          >
             <div className="flex flex-col items-center gap-2">
-              <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-sky-600" />
-              <span className="text-sm text-gray-600">Loading audit logs...</span>
+              <div className="w-8 h-8 border-b-2 rounded-full animate-spin border-sky-600" />
+              <span className="text-sm text-gray-600">
+                Loading audit logs...
+              </span>
             </div>
           </td>
         </tr>
@@ -433,7 +445,7 @@ export default function AuditLogs() {
       return (
         <tr>
           <td colSpan={COLUMN_COUNT} className="px-4 py-8 text-center">
-            <div className="inline-flex items-center justify-center rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <div className="inline-flex items-center justify-center px-4 py-3 text-sm text-red-700 border border-red-200 rounded-md bg-red-50">
               {error}
             </div>
           </td>
@@ -444,7 +456,10 @@ export default function AuditLogs() {
     if (!logs.length) {
       return (
         <tr>
-          <td colSpan={COLUMN_COUNT} className="px-4 py-10 text-center text-gray-500">
+          <td
+            colSpan={COLUMN_COUNT}
+            className="px-4 py-10 text-center text-gray-500"
+          >
             <p className="text-sm text-gray-600">
               No audit logs found. Adjust your filters or refresh the page.
             </p>
@@ -460,28 +475,32 @@ export default function AuditLogs() {
       return (
         <tr
           key={log.id ?? `${log.created_at}-${log.user}-${log.module}`}
-          className="cursor-pointer border-b border-gray-200 text-sm transition-colors hover:bg-sky-50"
+          className="text-sm transition-colors border-b border-gray-200 cursor-pointer hover:bg-sky-50"
           onClick={() => setSelectedLog(log)}
         >
-          <td className="whitespace-nowrap px-4 py-3 font-medium text-gray-900">
+          <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">
             {formatDateTime(log.created_at)}
           </td>
           <td className="min-w-[220px] px-4 py-3 text-gray-700">
-            <div className="font-medium text-gray-900">{getUserDisplay(log)}</div>
+            <div className="font-medium text-gray-900">
+              {getUserDisplay(log)}
+            </div>
             <div className="text-xs text-gray-500">{getRoleDisplay(log)}</div>
           </td>
-          <td className="whitespace-nowrap px-4 py-3 text-sm">
+          <td className="px-4 py-3 text-sm whitespace-nowrap">
             <span
               className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium border ${colorClass}`}
             >
               {action}
             </span>
           </td>
-          <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700">
+          <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
             {getModuleDisplay(log)}
           </td>
           <td className="px-4 py-3 text-sm text-gray-600">
-            <div className="line-clamp-2 leading-snug">{getDescription(log) || "—"}</div>
+            <div className="leading-snug line-clamp-2">
+              {getDescription(log) || "—"}
+            </div>
           </td>
         </tr>
       );
@@ -541,23 +560,27 @@ export default function AuditLogs() {
         <div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-700">Date From</label>
+              <label className="text-sm font-medium text-gray-700">
+                Date From
+              </label>
               <input
                 type="date"
                 value={filters.dateFrom}
                 max={filters.dateTo || undefined}
                 onChange={(e) => handleFilterChange("dateFrom", e.target.value)}
-                className="mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                className="px-3 py-2 mt-1 text-sm border border-gray-300 rounded-md shadow-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
               />
             </div>
             <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-700">Date To</label>
+              <label className="text-sm font-medium text-gray-700">
+                Date To
+              </label>
               <input
                 type="date"
                 value={filters.dateTo}
                 min={filters.dateFrom || undefined}
                 onChange={(e) => handleFilterChange("dateTo", e.target.value)}
-                className="mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                className="px-3 py-2 mt-1 text-sm border border-gray-300 rounded-md shadow-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
               />
             </div>
             <div className="flex flex-col">
@@ -567,7 +590,7 @@ export default function AuditLogs() {
                 value={filters.user}
                 onChange={(e) => handleFilterChange("user", e.target.value)}
                 placeholder="Email or name"
-                className="mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                className="px-3 py-2 mt-1 text-sm border border-gray-300 rounded-md shadow-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
               />
             </div>
             <div className="flex flex-col">
@@ -575,7 +598,7 @@ export default function AuditLogs() {
               <select
                 value={filters.role}
                 onChange={(e) => handleFilterChange("role", e.target.value)}
-                className="mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                className="px-3 py-2 mt-1 text-sm border border-gray-300 rounded-md shadow-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
               >
                 {ROLE_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -585,11 +608,15 @@ export default function AuditLogs() {
               </select>
             </div>
             <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-700">Action Type</label>
+              <label className="text-sm font-medium text-gray-700">
+                Action Type
+              </label>
               <select
                 value={filters.actionType}
-                onChange={(e) => handleFilterChange("actionType", e.target.value)}
-                className="mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                onChange={(e) =>
+                  handleFilterChange("actionType", e.target.value)
+                }
+                className="px-3 py-2 mt-1 text-sm border border-gray-300 rounded-md shadow-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
               >
                 {ACTION_TYPE_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -599,32 +626,32 @@ export default function AuditLogs() {
               </select>
             </div>
             <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-700">Keyword</label>
+              <label className="text-sm font-medium text-gray-700">
+                Keyword
+              </label>
               <input
                 type="text"
                 value={filters.keyword}
                 onChange={(e) => handleFilterChange("keyword", e.target.value)}
                 placeholder="Search description or module"
-                className="mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                className="px-3 py-2 mt-1 text-sm border border-gray-300 rounded-md shadow-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
               />
             </div>
           </div>
 
-          <div className=" flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-
-          </div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"></div>
         </div>
       </div>
 
-      <div className="rounded border border-gray-200 bg-white">
+      <div className="bg-white border border-gray-200 rounded">
         <div className="overflow-x-auto">
           <div className="custom-scrollbar max-h-[calc(100vh-360px)] overflow-y-auto">
             <table className="min-w-full">
               <thead>
-                <tr className="sticky top-0 z-10 bg-gradient-to-r from-sky-600 to-sky-700 text-left text-xs font-semibold uppercase tracking-wide text-white">
+                <tr className="sticky top-0 z-10 text-xs font-semibold tracking-wide text-left text-white uppercase bg-gradient-to-r from-sky-600 to-sky-700">
                   <th className="px-4 py-3">Date &amp; Time</th>
                   <th className="px-4 py-3">User</th>
-                <th className="px-4 py-3">Action Type</th>
+                  <th className="px-4 py-3">Action Type</th>
                   <th className="px-4 py-3">Module / Section</th>
                   <th className="px-4 py-3">Description</th>
                 </tr>
@@ -650,12 +677,10 @@ export default function AuditLogs() {
         />
       </div>
 
-
-
       {selectedLog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/50">
           <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">
                   Audit Log Details
@@ -666,16 +691,16 @@ export default function AuditLogs() {
               </div>
               <button
                 onClick={() => setSelectedLog(null)}
-                className="rounded-md border border-gray-00 px-3 py-1 text-sm font-medium text-gray-600 hover:bg-gray-100"
+                className="px-3 py-1 text-sm font-medium text-gray-600 border rounded-md border-gray-00 hover:bg-gray-100"
               >
                 Close
               </button>
             </div>
 
-            <div className="space-y-4 px-5 py-4">
+            <div className="px-5 py-4 space-y-4">
               <section className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <h3 className="text-xs font-semibold uppercase text-gray-500">
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase">
                     User
                   </h3>
                   <p className="mt-1 text-sm font-medium text-gray-900">
@@ -691,11 +716,13 @@ export default function AuditLogs() {
                   )}
                 </div>
                 <div>
-                  <h3 className="text-xs font-semibold uppercase text-gray-500">
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase">
                     Action
                   </h3>
                   <p className="mt-1 text-sm font-medium text-gray-900">
-                    {normalizeAction(selectedLog.action_type || selectedLog.action)}
+                    {normalizeAction(
+                      selectedLog.action_type || selectedLog.action
+                    )}
                   </p>
                   <p className="text-sm text-gray-600">
                     Module: {getModuleDisplay(selectedLog)}
@@ -707,10 +734,10 @@ export default function AuditLogs() {
               </section>
 
               <section>
-                <h3 className="text-xs font-semibold uppercase text-gray-500">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase">
                   Description
                 </h3>
-                <p className="mt-1 whitespace-pre-wrap rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
+                <p className="p-3 mt-1 text-sm text-gray-700 whitespace-pre-wrap border border-gray-200 rounded-lg bg-gray-50">
                   {getDescription(selectedLog) || "No description provided."}
                 </p>
               </section>
@@ -718,20 +745,20 @@ export default function AuditLogs() {
               {(selectedBeforeAfter?.before || selectedBeforeAfter?.after) && (
                 <section className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <h3 className="text-xs font-semibold uppercase text-gray-500">
+                    <h3 className="text-xs font-semibold text-gray-500 uppercase">
                       Before Data
                     </h3>
-                    <pre className="mt-1 max-h-60 overflow-auto rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-700">
+                    <pre className="p-3 mt-1 overflow-auto text-xs text-gray-700 border border-gray-200 rounded-lg max-h-60 bg-gray-50">
                       {selectedBeforeAfter.before
                         ? JSON.stringify(selectedBeforeAfter.before, null, 2)
                         : "—"}
                     </pre>
                   </div>
                   <div>
-                    <h3 className="text-xs font-semibold uppercase text-gray-500">
+                    <h3 className="text-xs font-semibold text-gray-500 uppercase">
                       After Data
                     </h3>
-                    <pre className="mt-1 max-h-60 overflow-auto rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-700">
+                    <pre className="p-3 mt-1 overflow-auto text-xs text-gray-700 border border-gray-200 rounded-lg max-h-60 bg-gray-50">
                       {selectedBeforeAfter.after
                         ? JSON.stringify(selectedBeforeAfter.after, null, 2)
                         : "—"}
@@ -742,26 +769,28 @@ export default function AuditLogs() {
 
               {hasMetadata(selectedLog) && (
                 <section>
-                  <h3 className="text-xs font-semibold uppercase text-gray-500">
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase">
                     Additional Details
                   </h3>
-                  <div className="mt-1 overflow-hidden rounded-lg border border-gray-200">
+                  <div className="mt-1 overflow-hidden border border-gray-200 rounded-lg">
                     <dl className="divide-y divide-gray-200">
-                      {Object.entries(selectedLog.metadata).map(([key, value]) => (
-                        <div
-                          key={key}
-                          className="grid grid-cols-3 gap-4 px-4 py-2 text-sm text-gray-700"
-                        >
-                          <dt className="font-medium text-gray-600 capitalize">
-                            {key.replace(/_/g, " ")}
-                          </dt>
-                          <dd className="col-span-2 break-words text-gray-800">
-                            {typeof value === "object"
-                              ? JSON.stringify(value, null, 2)
-                              : String(value)}
-                          </dd>
-                        </div>
-                      ))}
+                      {Object.entries(selectedLog.metadata).map(
+                        ([key, value]) => (
+                          <div
+                            key={key}
+                            className="grid grid-cols-3 gap-4 px-4 py-2 text-sm text-gray-700"
+                          >
+                            <dt className="font-medium text-gray-600 capitalize">
+                              {key.replace(/_/g, " ")}
+                            </dt>
+                            <dd className="col-span-2 text-gray-800 break-words">
+                              {typeof value === "object"
+                                ? JSON.stringify(value, null, 2)
+                                : String(value)}
+                            </dd>
+                          </div>
+                        )
+                      )}
                     </dl>
                   </div>
                 </section>
@@ -769,10 +798,10 @@ export default function AuditLogs() {
 
               {selectedLog.user_details?.email && (
                 <section>
-                  <h3 className="text-xs font-semibold uppercase text-gray-500">
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase">
                     User Details
                   </h3>
-                  <div className="mt-1 rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
+                  <div className="p-3 mt-1 text-sm text-gray-700 border border-gray-200 rounded-lg bg-gray-50">
                     <p>Email: {selectedLog.user_details.email}</p>
                     {selectedLog.user_details.name && (
                       <p>Name: {selectedLog.user_details.name}</p>
@@ -797,4 +826,3 @@ export default function AuditLogs() {
     </>
   );
 }
-

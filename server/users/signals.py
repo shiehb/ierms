@@ -6,8 +6,7 @@ from django.utils import timezone
 from .models import User
 from .utils.email_utils import send_welcome_email, send_security_alert
 from audit.constants import AUDIT_ACTIONS, AUDIT_MODULES
-from audit.utils import log_activity  # ✅ FIX: Import from audit app
-from system_config.models import SystemConfiguration  # Import for password generation
+from audit.utils import log_activity
 
 # Custom signal for user creation with password
 user_created_with_password = Signal()

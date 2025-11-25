@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import api from "../../services/api";
 import ConfirmationDialog from "../common/ConfirmationDialog";
-import { useNotifications } from "../NotificationManager";
+import { useNotifications } from "../../hooks/useNotifications";
 import { Upload, X, User } from "lucide-react";
 
 export default function EditUser({ userData, onClose, onUserUpdated }) {
@@ -20,7 +20,7 @@ export default function EditUser({ userData, onClose, onUserUpdated }) {
   const [emailCheck, setEmailCheck] = useState({
     checking: false,
     exists: false,
-    existingUser: null
+    existingUser: null,
   });
   const [emailFormatValid, setEmailFormatValid] = useState(true);
   const [avatar, setAvatar] = useState(null);
@@ -34,10 +34,11 @@ export default function EditUser({ userData, onClose, onUserUpdated }) {
     if (!email || email.trim() === "") {
       return true; // Empty is okay, will be caught by required validation
     }
-    
+
     // Email regex pattern
-    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
-    
+    const emailRegex =
+      /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+
     return emailRegex.test(email.trim().toLowerCase());
   };
 
@@ -50,28 +51,35 @@ export default function EditUser({ userData, onClose, onUserUpdated }) {
       userLevel: userData?.userlevel || "",
       section: userData?.section || "",
     });
-    
+
     // Reset email changed flag when component re-initializes
     setEmailChanged(false);
-    
+
     // Reset email validation states
     setEmailFormatValid(true);
     setEmailCheck({ checking: false, exists: false, existingUser: null });
-    
+
     // Set avatar preview if user has existing avatar
     if (userData?.avatar) {
       // Handle both absolute URLs and relative paths
       let avatarUrl;
-      if (userData.avatar.startsWith('http://') || userData.avatar.startsWith('https://')) {
+      if (
+        userData.avatar.startsWith("http://") ||
+        userData.avatar.startsWith("https://")
+      ) {
         // Already an absolute URL
         avatarUrl = userData.avatar;
-      } else if (userData.avatar.startsWith('/')) {
+      } else if (userData.avatar.startsWith("/")) {
         // Relative path starting with / - prepend origin
         avatarUrl = `${window.location.origin}${userData.avatar}`;
       } else {
         // Relative path without / - construct full URL
-        const baseUrl = api.defaults.baseURL.replace('/api/', '').replace(/\/$/, '');
-        avatarUrl = `${baseUrl}${userData.avatar.startsWith('/') ? '' : '/'}${userData.avatar}`;
+        const baseUrl = api.defaults.baseURL
+          .replace("/api/", "")
+          .replace(/\/$/, "");
+        avatarUrl = `${baseUrl}${userData.avatar.startsWith("/") ? "" : "/"}${
+          userData.avatar
+        }`;
       }
       setAvatarPreview(avatarUrl);
     } else {
@@ -92,7 +100,12 @@ export default function EditUser({ userData, onClose, onUserUpdated }) {
   // Check if email exists (only if format is valid and email has changed)
   useEffect(() => {
     // Don't check for duplicates if format is invalid, email is too short, or email hasn't changed
-    if (!formData.email || formData.email.length < 3 || !emailFormatValid || !emailChanged) {
+    if (
+      !formData.email ||
+      formData.email.length < 3 ||
+      !emailFormatValid ||
+      !emailChanged
+    ) {
       setEmailCheck({ checking: false, exists: false, existingUser: null });
       return;
     }
@@ -107,19 +120,21 @@ export default function EditUser({ userData, onClose, onUserUpdated }) {
       setEmailCheck({ checking: true, exists: false, existingUser: null });
       try {
         const response = await api.get("auth/search/", {
-          params: { q: formData.email }
+          params: { q: formData.email },
         });
-        
+
         // Check if any result matches the exact email (excluding current user)
         const exactMatch = response.data.results?.find(
-          user => user.email.toLowerCase() === formData.email.toLowerCase() && user.id !== userData?.id
+          (user) =>
+            user.email.toLowerCase() === formData.email.toLowerCase() &&
+            user.id !== userData?.id
         );
-        
+
         if (exactMatch) {
           setEmailCheck({
             checking: false,
             exists: true,
-            existingUser: exactMatch
+            existingUser: exactMatch,
           });
         } else {
           setEmailCheck({ checking: false, exists: false, existingUser: null });
@@ -140,8 +155,14 @@ export default function EditUser({ userData, onClose, onUserUpdated }) {
   // Section options depending on role
   const sectionOptionsByLevel = {
     "Section Chief": [
-      { value: "PD-1586,RA-8749,RA-9275", label: "EIA, Air & Water Quality Monitoring Section" },
-      { value: "RA-6969", label: "Toxic Chemicals & Hazardous Monitoring Section" },
+      {
+        value: "PD-1586,RA-8749,RA-9275",
+        label: "EIA, Air & Water Quality Monitoring Section",
+      },
+      {
+        value: "RA-6969",
+        label: "Toxic Chemicals & Hazardous Monitoring Section",
+      },
       { value: "RA-9003", label: "Ecological Solid Waste Management Section" },
     ],
     "Unit Head": [
@@ -166,20 +187,20 @@ export default function EditUser({ userData, onClose, onUserUpdated }) {
     } else if (name === "email") {
       newValue = value.toLowerCase();
     }
-    
+
     setFormData((prev) => {
       let newFormData = { ...prev, [name]: newValue };
-      
+
       // Reset section when user level changes
       if (name === "userLevel") {
         newFormData.section = "";
       }
-      
+
       // Track email changes
       if (name === "email") {
         setEmailChanged(newValue !== userData?.email);
       }
-      
+
       return newFormData;
     });
   };
@@ -187,18 +208,21 @@ export default function EditUser({ userData, onClose, onUserUpdated }) {
   const handleAvatarChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (!file.type.startsWith('image/')) {
+      if (!file.type.startsWith("image/")) {
         notifications.error("Please select a valid image file", {
           title: "Invalid File",
-          duration: 4000
+          duration: 4000,
         });
         return;
       }
       if (file.size > 5 * 1024 * 1024) {
-        notifications.error("Image size must be less than 5MB. The image will be automatically optimized after upload.", {
-          title: "File Too Large",
-          duration: 5000
-        });
+        notifications.error(
+          "Image size must be less than 5MB. The image will be automatically optimized after upload.",
+          {
+            title: "File Too Large",
+            duration: 5000,
+          }
+        );
         return;
       }
       setAvatar(file);
@@ -209,17 +233,17 @@ export default function EditUser({ userData, onClose, onUserUpdated }) {
   const removeAvatar = () => {
     setAvatar(null);
     if (userData?.avatar) {
-      const avatarUrl = userData.avatar.startsWith('http') 
-        ? userData.avatar 
-        : userData.avatar.startsWith('/')
+      const avatarUrl = userData.avatar.startsWith("http")
+        ? userData.avatar
+        : userData.avatar.startsWith("/")
         ? `${window.location.origin}${userData.avatar}`
-        : `${api.defaults.baseURL.replace('/api/', '')}${userData.avatar}`;
+        : `${api.defaults.baseURL.replace("/api/", "")}${userData.avatar}`;
       setAvatarPreview(avatarUrl);
     } else {
       setAvatarPreview(null);
     }
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = "";
     }
   };
 
@@ -243,23 +267,23 @@ export default function EditUser({ userData, onClose, onUserUpdated }) {
     setLoading(true);
     try {
       const payload = new FormData();
-      payload.append('email', formData.email);
-      payload.append('first_name', formData.firstName);
+      payload.append("email", formData.email);
+      payload.append("first_name", formData.firstName);
       if (formData.middleName.trim()) {
-        payload.append('middle_name', formData.middleName);
+        payload.append("middle_name", formData.middleName);
       }
-      payload.append('last_name', formData.lastName);
-      payload.append('userlevel', formData.userLevel);
+      payload.append("last_name", formData.lastName);
+      payload.append("userlevel", formData.userLevel);
       if (formData.section) {
-        payload.append('section', formData.section);
+        payload.append("section", formData.section);
       }
       if (avatar) {
-        payload.append('avatar', avatar);
+        payload.append("avatar", avatar);
       }
 
       const response = await api.put(`auth/users/${userData.id}/`, payload, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          "Content-Type": "multipart/form-data",
         },
       });
 
@@ -269,16 +293,23 @@ export default function EditUser({ userData, onClose, onUserUpdated }) {
         if (updatedAvatar) {
           // Handle both absolute URLs and relative paths
           let avatarUrl;
-          if (updatedAvatar.startsWith('http://') || updatedAvatar.startsWith('https://')) {
+          if (
+            updatedAvatar.startsWith("http://") ||
+            updatedAvatar.startsWith("https://")
+          ) {
             // Already an absolute URL
             avatarUrl = updatedAvatar;
-          } else if (updatedAvatar.startsWith('/')) {
+          } else if (updatedAvatar.startsWith("/")) {
             // Relative path starting with / - prepend origin
             avatarUrl = `${window.location.origin}${updatedAvatar}`;
           } else {
             // Relative path without / - prepend base URL without /api/
-            const baseUrl = api.defaults.baseURL.replace('/api/', '').replace(/\/$/, '');
-            avatarUrl = `${baseUrl}${updatedAvatar.startsWith('/') ? '' : '/'}${updatedAvatar}`;
+            const baseUrl = api.defaults.baseURL
+              .replace("/api/", "")
+              .replace(/\/$/, "");
+            avatarUrl = `${baseUrl}${
+              updatedAvatar.startsWith("/") ? "" : "/"
+            }${updatedAvatar}`;
           }
           setAvatarPreview(avatarUrl);
           // Update userData reference if available (for immediate display)
@@ -289,7 +320,7 @@ export default function EditUser({ userData, onClose, onUserUpdated }) {
         // Reset avatar file state since it's been uploaded
         setAvatar(null);
         if (fileInputRef.current) {
-          fileInputRef.current.value = '';
+          fileInputRef.current.value = "";
         }
       }
 
@@ -297,26 +328,24 @@ export default function EditUser({ userData, onClose, onUserUpdated }) {
         `User ${formData.firstName} ${formData.lastName} has been updated successfully!`,
         {
           title: "User Updated Successfully",
-          duration: 5000
+          duration: 5000,
         }
       );
 
       if (onUserUpdated) onUserUpdated();
       onClose();
     } catch (err) {
-      const errorMessage = err.response?.data?.detail || 
-                         err.response?.data?.email?.[0] ||
-                         err.response?.data?.userlevel?.[0] ||
-                         err.response?.data?.section?.[0] ||
-                         "An unexpected error occurred while updating the user.";
-      
-      notifications.error(
-        errorMessage,
-        {
-          title: "Failed to Update User",
-          duration: 8000
-        }
-      );
+      const errorMessage =
+        err.response?.data?.detail ||
+        err.response?.data?.email?.[0] ||
+        err.response?.data?.userlevel?.[0] ||
+        err.response?.data?.section?.[0] ||
+        "An unexpected error occurred while updating the user.";
+
+      notifications.error(errorMessage, {
+        title: "Failed to Update User",
+        duration: 8000,
+      });
     } finally {
       setLoading(false);
     }
@@ -332,10 +361,20 @@ export default function EditUser({ userData, onClose, onUserUpdated }) {
     // Check if user level is being changed to Division Chief, Section Chief, or Unit Head
     if (newLevel === "Division Chief" && originalLevel !== "Division Chief") {
       return "Please note: Changing this user to Division Chief will automatically deactivate any existing active Division Chief.";
-    } else if (newLevel === "Section Chief" && (originalLevel !== "Section Chief" || originalSection !== newSection)) {
-      return `Please note: Changing this user to Section Chief for ${newSection ? `section ${newSection}` : 'this section'} will automatically deactivate any existing active Section Chief with the same section.`;
-    } else if (newLevel === "Unit Head" && (originalLevel !== "Unit Head" || originalSection !== newSection)) {
-      return `Please note: Changing this user to Unit Head for ${newSection ? `section ${newSection}` : 'this section'} will automatically deactivate any existing active Unit Head with the same section.`;
+    } else if (
+      newLevel === "Section Chief" &&
+      (originalLevel !== "Section Chief" || originalSection !== newSection)
+    ) {
+      return `Please note: Changing this user to Section Chief for ${
+        newSection ? `section ${newSection}` : "this section"
+      } will automatically deactivate any existing active Section Chief with the same section.`;
+    } else if (
+      newLevel === "Unit Head" &&
+      (originalLevel !== "Unit Head" || originalSection !== newSection)
+    ) {
+      return `Please note: Changing this user to Unit Head for ${
+        newSection ? `section ${newSection}` : "this section"
+      } will automatically deactivate any existing active Unit Head with the same section.`;
     }
     return null;
   };
@@ -343,8 +382,10 @@ export default function EditUser({ userData, onClose, onUserUpdated }) {
   // Build confirmation message
   const getConfirmationMessage = () => {
     const autoDeactivationMsg = getAutoDeactivationMessage();
-    const emailChangeMsg = emailChanged ? "Changing the email address will generate a new password and send it to the new email address. The user will be required to change their password on first login." : null;
-    
+    const emailChangeMsg = emailChanged
+      ? "Changing the email address will generate a new password and send it to the new email address. The user will be required to change their password on first login."
+      : null;
+
     return (
       <div className="space-y-3">
         <p className="text-gray-700">
@@ -366,7 +407,10 @@ export default function EditUser({ userData, onClose, onUserUpdated }) {
 
   const Label = ({ field, children, required = true }) => {
     return (
-      <label htmlFor={field} className="flex items-center justify-between text-sm font-medium text-gray-700">
+      <label
+        htmlFor={field}
+        className="flex items-center justify-between text-sm font-medium text-gray-700"
+      >
         <span>
           {children} {required && <span className="text-red-500">*</span>}
         </span>
@@ -386,9 +430,13 @@ export default function EditUser({ userData, onClose, onUserUpdated }) {
           !formData.section.trim() && (
             <span className="text-xs text-red-500">Required</span>
           )}
-        {field !== "section" && field !== "email" && required && submitted && !formData[field]?.trim() && (
-          <span className="text-xs text-red-500">Required</span>
-        )}
+        {field !== "section" &&
+          field !== "email" &&
+          required &&
+          submitted &&
+          !formData[field]?.trim() && (
+            <span className="text-xs text-red-500">Required</span>
+          )}
       </label>
     );
   };
@@ -434,11 +482,12 @@ export default function EditUser({ userData, onClose, onUserUpdated }) {
               className="hidden"
             />
             <span className="text-xs text-sky-600 hover:text-sky-700 underline cursor-pointer">
-              {avatarPreview ? 'Change Avatar' : 'Upload Avatar'}
+              {avatarPreview ? "Change Avatar" : "Upload Avatar"}
             </span>
           </label>
           <p className="text-xs text-gray-500 mt-1">
-            Maximum file size: 5MB. Images are automatically optimized for web display.
+            Maximum file size: 5MB. Images are automatically optimized for web
+            display.
           </p>
         </div>
 
@@ -460,7 +509,9 @@ export default function EditUser({ userData, onClose, onUserUpdated }) {
             />
           </div>
           <div>
-            <Label field="middleName" required={false}>Middle Name</Label>
+            <Label field="middleName" required={false}>
+              Middle Name
+            </Label>
             <input
               id="middleName"
               type="text"
@@ -512,7 +563,8 @@ export default function EditUser({ userData, onClose, onUserUpdated }) {
           )}
           {emailChanged && emailFormatValid && !emailCheck.exists && (
             <p className="mt-1 text-xs text-amber-600">
-              Changing email will generate a new password and send it to the new email address
+              Changing email will generate a new password and send it to the new
+              email address
             </p>
           )}
         </div>
@@ -572,7 +624,6 @@ export default function EditUser({ userData, onClose, onUserUpdated }) {
             )}
           </div>
         </div>
-
 
         {/* Buttons */}
         <div className="flex gap-4 pt-2">

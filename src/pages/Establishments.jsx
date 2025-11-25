@@ -14,7 +14,7 @@ import {
   getProfile,
   setEstablishmentPolygon,
 } from "../services/api";
-import { useNotifications } from "../components/NotificationManager";
+import { useNotifications } from "../hooks/useNotifications";
 
 export default function Establishments() {
   const location = useLocation();
@@ -25,7 +25,8 @@ export default function Establishments() {
   const notifications = useNotifications();
 
   // 🔹 Inspection view state
-  const [inspectionsEstablishment, setInspectionsEstablishment] = useState(null);
+  const [inspectionsEstablishment, setInspectionsEstablishment] =
+    useState(null);
 
   // 🔹 View state: 'list', 'polygon', or 'inspections'
   const [currentView, setCurrentView] = useState("list");
@@ -37,7 +38,7 @@ export default function Establishments() {
   const [showOtherPolygons] = useState(true);
   const [snapEnabled] = useState(true);
   const [snapDistance] = useState(10);
-  
+
   // 🔹 Polygon validation state
   const [isPolygonValid, setIsPolygonValid] = useState(true);
 
@@ -58,7 +59,9 @@ export default function Establishments() {
     if (location.state?.viewInspections && location.state?.establishmentId) {
       const establishmentId = location.state.establishmentId;
       // Find the establishment from the list or fetch it
-      const foundEstablishment = establishments.find(e => e.id === establishmentId);
+      const foundEstablishment = establishments.find(
+        (e) => e.id === establishmentId
+      );
       if (foundEstablishment) {
         setInspectionsEstablishment(foundEstablishment);
         setCurrentView("inspections");
@@ -66,9 +69,12 @@ export default function Establishments() {
         // If not found in list, fetch it
         const fetchEstablishment = async () => {
           try {
-            const response = await getEstablishments({ page: 1, page_size: 10000 });
+            const response = await getEstablishments({
+              page: 1,
+              page_size: 10000,
+            });
             const data = response.results || response;
-            const establishment = data.find(e => e.id === establishmentId);
+            const establishment = data.find((e) => e.id === establishmentId);
             if (establishment) {
               setInspectionsEstablishment(establishment);
               setCurrentView("inspections");
@@ -98,13 +104,10 @@ export default function Establishments() {
       setEstablishments(data);
     } catch (err) {
       console.error("Error fetching establishments:", err);
-      notifications.error(
-        "Error fetching establishments",
-        {
-          title: "Fetch Error",
-          duration: 8000
-        }
-      );
+      notifications.error("Error fetching establishments", {
+        title: "Fetch Error",
+        duration: 8000,
+      });
     }
   };
 
@@ -163,19 +166,21 @@ export default function Establishments() {
         polygonEstablishment.polygon || [],
         polygonEstablishment.marker_icon || null
       );
-      
+
       // Use the polygon from response (backend may have adjusted it)
-      const savedPolygon = response.polygon || polygonEstablishment.polygon || [];
-      const savedIcon = response.marker_icon || polygonEstablishment.marker_icon;
-      
+      const savedPolygon =
+        response.polygon || polygonEstablishment.polygon || [];
+      const savedIcon =
+        response.marker_icon || polygonEstablishment.marker_icon;
+
       // Update local state with the saved polygon and icon
-      setPolygonEstablishment(prev => ({
-        ...prev, 
+      setPolygonEstablishment((prev) => ({
+        ...prev,
         polygon: savedPolygon,
         marker_icon: savedIcon,
-        originalPolygon: [...savedPolygon]
+        originalPolygon: [...savedPolygon],
       }));
-      
+
       setEstablishments((prev) =>
         prev.map((e) =>
           e.id === polygonEstablishment.id
@@ -186,28 +191,23 @@ export default function Establishments() {
       setPolygonEditMode(false);
       setHasPolygonChanges(false);
       setRefreshTrigger((prev) => prev + 1);
-      
+
       // Show notification with adjustment info if applicable
-      const message = response.was_adjusted && response.adjustment_message
-        ? `Polygon saved! ${response.adjustment_message}`
-        : "Polygon saved successfully!";
-        
-      notifications.success(
-        message,
-        {
-          title: "Polygon Saved",
-          duration: response.was_adjusted ? 6000 : 4000
-        }
-      );
+      const message =
+        response.was_adjusted && response.adjustment_message
+          ? `Polygon saved! ${response.adjustment_message}`
+          : "Polygon saved successfully!";
+
+      notifications.success(message, {
+        title: "Polygon Saved",
+        duration: response.was_adjusted ? 6000 : 4000,
+      });
     } catch (err) {
       console.error("Error saving polygon:", err);
-      notifications.error(
-        "Failed to save polygon",
-        {
-          title: "Save Failed",
-          duration: 8000
-        }
-      );
+      notifications.error("Failed to save polygon", {
+        title: "Save Failed",
+        duration: 8000,
+      });
     } finally {
       setLoading(false);
     }
@@ -242,7 +242,8 @@ export default function Establishments() {
       setPolygonEstablishment((prev) => ({
         ...prev,
         polygon: [...prev.originalPolygon],
-        marker_icon: prev.originalIcon || prev.marker_icon || prev.nature_of_business,
+        marker_icon:
+          prev.originalIcon || prev.marker_icon || prev.nature_of_business,
       }));
     }
   };
@@ -266,7 +267,7 @@ export default function Establishments() {
     // Check if there are changes compared to original
     const hasChanges = checkPolygonChanges(polygon);
     setHasPolygonChanges(hasChanges);
-    
+
     // Update validation state
     setIsPolygonValid(isValid);
   };
@@ -293,18 +294,18 @@ export default function Establishments() {
     // Close modals
     setShowAdd(false);
     setEditEstablishment(null);
-    
+
     // Navigate to polygon view with edit mode enabled
     setPolygonEstablishment({
       ...establishment,
       originalPolygon: establishment.polygon ? [...establishment.polygon] : [],
-      originalIcon: establishment.marker_icon || establishment.nature_of_business,
+      originalIcon:
+        establishment.marker_icon || establishment.nature_of_business,
     });
     setCurrentView("polygon");
     setPolygonEditMode(true);
     setHasPolygonChanges(false);
   };
-
 
   return (
     <>
@@ -376,7 +377,11 @@ export default function Establishments() {
                                 ? "bg-sky-600 hover:bg-sky-700"
                                 : "bg-gray-400 cursor-not-allowed"
                             }`}
-                            title={!isPolygonValid ? "Establishment marker must be inside polygon" : ""}
+                            title={
+                              !isPolygonValid
+                                ? "Establishment marker must be inside polygon"
+                                : ""
+                            }
                           >
                             Save Polygon
                           </button>
@@ -395,14 +400,15 @@ export default function Establishments() {
                 </div>
               </div>
 
-
               {/* Grid Layout */}
               <div className="grid grid-cols-3 gap-4 mt-4">
                 {/* Left Column - Establishment Details */}
                 <div className="col-span-1">
-                  <EstablishmentDetailsPanel establishment={polygonEstablishment} />
+                  <EstablishmentDetailsPanel
+                    establishment={polygonEstablishment}
+                  />
                 </div>
-                
+
                 {/* Right Column - Map (2 spans) */}
                 <div className="col-span-2">
                   <PolygonMap
@@ -431,9 +437,9 @@ export default function Establishments() {
                   Back to List
                 </button>
               </div>
-              
+
               {/* Inspection Records Content */}
-              <EstablishmentInspectionsContent 
+              <EstablishmentInspectionsContent
                 establishment={inspectionsEstablishment}
               />
             </div>
@@ -464,7 +470,6 @@ export default function Establishments() {
           />
         </div>
       )}
-
     </>
   );
 }

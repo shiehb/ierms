@@ -5,10 +5,6 @@ from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 import os
-try:
-    from system_config.models import SystemConfiguration
-except Exception:
-    SystemConfiguration = None
 
 def generate_otp(email):
     """Generate a 6-digit OTP and store it in cache"""

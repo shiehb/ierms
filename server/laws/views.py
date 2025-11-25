@@ -1,11 +1,10 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.db.models import Q
 from audit.utils import log_activity
 from audit.constants import AUDIT_ACTIONS, AUDIT_MODULES
-from system_config.permissions import IsSystemAdmin
 from .models import Law
 from .serializers import LawSerializer
 
@@ -25,7 +24,7 @@ class LawViewSet(viewsets.ModelViewSet):
         All authenticated users can view.
         """
         if self.action in ['create', 'update', 'partial_update', 'destroy', 'toggle_status']:
-            return [IsAuthenticated(), IsSystemAdmin()]
+            return [IsAuthenticated(), IsAdminUser()]
         return [IsAuthenticated()]
     
     def get_queryset(self):

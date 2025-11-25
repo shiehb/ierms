@@ -23,7 +23,14 @@ export const MENU_CONFIG = [
     name: "Dashboard",
     path: "/",
     icon: LayoutDashboard,
-    roles: ["Admin", "Section Chief", "Unit Head", "Legal Unit", "Inspector", "public"],
+    roles: [
+      "Admin",
+      "Section Chief",
+      "Unit Head",
+      "Legal Unit",
+      "Inspector",
+      "public",
+    ],
   },
   {
     id: "users",
@@ -31,7 +38,7 @@ export const MENU_CONFIG = [
     path: "/users",
     icon: Users,
     roles: ["Admin"],
-    category: "Administration"
+    category: "Administration",
   },
   {
     id: "laws",
@@ -39,38 +46,67 @@ export const MENU_CONFIG = [
     path: "/laws",
     icon: Scale,
     roles: ["Admin"],
-    category: "Administration"
+    category: "Administration",
   },
   {
     id: "map",
     name: "Map",
     path: "/map",
     icon: MapPin,
-    roles: ["Admin", "Section Chief", "Unit Head", "Legal Unit", "Inspector", "public"],
+    roles: [
+      "Admin",
+      "Section Chief",
+      "Unit Head",
+      "Legal Unit",
+      "Inspector",
+      "public",
+    ],
   },
   {
     id: "establishments",
     name: "Establishments",
     path: "/establishments",
     icon: Building,
-    roles: ["Admin", "Section Chief", "Unit Head", "Legal Unit", "Inspector", "public"],
-    category: "Management"
+    roles: [
+      "Admin",
+      "Section Chief",
+      "Unit Head",
+      "Legal Unit",
+      "Inspector",
+      "public",
+    ],
+    category: "Management",
   },
   {
     id: "inspections",
     name: "Inspections",
     path: "/inspections",
     icon: InspectIcon,
-    roles: ["Admin", "Section Chief", "Unit Head", "Legal Unit", "Inspector", "public"],
-    category: "Management"
+    roles: [
+      "Admin",
+      "Section Chief",
+      "Unit Head",
+      "Legal Unit",
+      "Inspector",
+      "public",
+    ],
+    category: "Management",
   },
   {
     id: "reports",
     name: "Reports",
     path: "/reports",
     icon: BarChart3,
-    roles: ["Admin", "Section Chief", "Unit Head", "Legal Unit", "Inspector", "Division Chief", "Monitoring Personnel"],
-    category: "Management"
+    roles: [
+      "Admin",
+      "Section Chief",
+      "Unit Head",
+      "Legal Unit",
+      "Inspector",
+      "Division Chief",
+      "Monitoring Personnel",
+    ],
+    category: "Management",
   },
   {
     id: "billing",
@@ -78,7 +114,7 @@ export const MENU_CONFIG = [
     path: "/billing",
     icon: FileText,
     roles: ["Legal Unit"],
-    category: "Legal"
+    category: "Legal",
   },
   {
     id: "reinspection-reminders",
@@ -86,15 +122,7 @@ export const MENU_CONFIG = [
     path: "/reinspection-reminders",
     icon: Bell,
     roles: ["Division Chief"],
-    category: "Management"
-  },
-  {
-    id: "system-config",
-    name: "System Configuration",
-    path: "/system-config",
-    icon: Settings,
-    roles: ["Admin"],
-    category: "Administration"
+    category: "Management",
   },
   {
     id: "database-backup",
@@ -102,7 +130,7 @@ export const MENU_CONFIG = [
     path: "/database-backup",
     icon: Database,
     roles: ["Admin"],
-    category: "Administration"
+    category: "Administration",
   },
   {
     id: "audit-logs",
@@ -110,7 +138,7 @@ export const MENU_CONFIG = [
     path: "/audit-logs",
     icon: History,
     roles: ["Admin"],
-    category: "Administration"
+    category: "Administration",
   },
   {
     id: "help-editor",
@@ -118,14 +146,14 @@ export const MENU_CONFIG = [
     path: "/help/editor",
     icon: BookOpen,
     roles: ["Admin"],
-    category: "Administration"
+    category: "Administration",
   },
 ];
 
 // Helper function to filter menu items by user role
 export const filterMenuByRole = (userLevel) => {
-  return MENU_CONFIG.filter(item => 
-    item.roles.includes(userLevel) || item.roles.includes("public")
+  return MENU_CONFIG.filter(
+    (item) => item.roles.includes(userLevel) || item.roles.includes("public")
   );
 };
 
@@ -133,8 +161,8 @@ export const filterMenuByRole = (userLevel) => {
 export const groupMenuByCategory = (menuItems) => {
   const grouped = {};
   const uncategorized = [];
-  
-  menuItems.forEach(item => {
+
+  menuItems.forEach((item) => {
     if (item.category) {
       if (!grouped[item.category]) {
         grouped[item.category] = [];
@@ -144,17 +172,17 @@ export const groupMenuByCategory = (menuItems) => {
       uncategorized.push(item);
     }
   });
-  
+
   // Define the order of categories (Administration at the bottom)
   const categoryOrder = ["Management", "Legal", "Administration"];
-  
+
   // Create ordered grouped object
   const orderedGrouped = {};
-  categoryOrder.forEach(category => {
+  categoryOrder.forEach((category) => {
     if (grouped[category]) {
       orderedGrouped[category] = grouped[category];
     }
   });
-  
+
   return { grouped: orderedGrouped, uncategorized };
 };

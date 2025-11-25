@@ -3,7 +3,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.utils import timezone
 from django.conf import settings
-from system_config.models import SystemConfiguration  # Import from system_config
+from core.settings import generate_secure_password
 
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, password_provided=False, **extra_fields):
@@ -11,8 +11,8 @@ class UserManager(BaseUserManager):
             raise ValueError("Email is required")
         email = self.normalize_email(email)
         if not password:
-            # Use auto-generated password from system_config
-            password = SystemConfiguration.generate_default_password()
+            # Use auto-generated password
+            password = generate_secure_password()
         
         # Set must_change_password=True by default for new users (unless explicitly set)
         if 'must_change_password' not in extra_fields:

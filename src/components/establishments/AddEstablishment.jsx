@@ -1,26 +1,35 @@
 import { useState, useRef, useEffect } from "react";
-import { MapContainer, TileLayer, Marker, useMapEvents, LayersControl } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  useMapEvents,
+  LayersControl,
+} from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import { createEstablishment, checkEstablishmentNameExists } from "../../services/api";
+import {
+  createEstablishment,
+  checkEstablishmentNameExists,
+} from "../../services/api";
 import ConfirmationDialog from "../common/ConfirmationDialog";
 import SearchableSelect from "../common/SearchableSelect";
 import osm from "../map/osm-provider"; // ✅ use OSM provider
-import { 
-  ALLOWED_PROVINCES, 
-  NATURE_OF_BUSINESS_OPTIONS, 
+import {
+  ALLOWED_PROVINCES,
+  NATURE_OF_BUSINESS_OPTIONS,
   ILOCOS_REGION_BOUNDS,
   ILOCOS_REGION_CENTER,
   ILOCOS_CITIES_BY_PROVINCE,
   POSTAL_CODES_BY_CITY,
-  BARANGAYS_BY_CITY
+  BARANGAYS_BY_CITY,
 } from "../../constants/establishmentConstants";
-import { useNotifications } from "../NotificationManager";
+import { useNotifications } from "../../hooks/useNotifications";
 
 // Fix Leaflet marker icons
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-import iconRetina from 'leaflet/dist/images/marker-icon-2x.png';
+import icon from "leaflet/dist/images/marker-icon.png";
+import iconShadow from "leaflet/dist/images/marker-shadow.png";
+import iconRetina from "leaflet/dist/images/marker-icon-2x.png";
 
 const markerIcon = new L.Icon({
   iconUrl: icon,
@@ -30,7 +39,6 @@ const markerIcon = new L.Icon({
   iconAnchor: [12, 41],
   shadowSize: [41, 41],
 });
-
 
 // Forward geocoding: address -> coordinates and postal code
 async function forwardGeocode(province, city = null, barangay = null) {
@@ -42,9 +50,11 @@ async function forwardGeocode(province, city = null, barangay = null) {
   } else {
     query = `${province}, Philippines`;
   }
-  
-  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`;
-  
+
+  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+    query
+  )}&limit=1`;
+
   try {
     const res = await fetch(url);
     const data = await res.json();
@@ -52,11 +62,11 @@ async function forwardGeocode(province, city = null, barangay = null) {
       return {
         latitude: parseFloat(data[0].lat).toFixed(6),
         longitude: parseFloat(data[0].lon).toFixed(6),
-        postalCode: data[0].address?.postcode || null
+        postalCode: data[0].address?.postcode || null,
       };
     }
   } catch (error) {
-    console.error('Forward geocoding error:', error);
+    console.error("Forward geocoding error:", error);
   }
   return null;
 }
@@ -64,83 +74,84 @@ async function forwardGeocode(province, city = null, barangay = null) {
 // Helper function to find best match for province
 function findBestProvinceMatch(osmProvince) {
   if (!osmProvince) return "";
-  
+
   const osmUpper = osmProvince.toUpperCase();
-  
+
   // Direct match
   if (ALLOWED_PROVINCES.includes(osmUpper)) {
     return osmUpper;
   }
-  
+
   // Fuzzy matching for common variations
   const provinceMap = {
-    "LAOAG": "ILOCOS NORTE",
-    "VIGAN": "ILOCOS SUR", 
+    LAOAG: "ILOCOS NORTE",
+    VIGAN: "ILOCOS SUR",
     "SAN FERNANDO": "LA UNION",
-    "DAGUPAN": "PANGASINAN",
+    DAGUPAN: "PANGASINAN",
     "SAN CARLOS": "PANGASINAN",
-    "ALAMINOS": "PANGASINAN",
-    "URDANETA": "PANGASINAN"
+    ALAMINOS: "PANGASINAN",
+    URDANETA: "PANGASINAN",
   };
-  
+
   // Check if OSM city name matches a known city in our provinces
   for (const [city, province] of Object.entries(provinceMap)) {
     if (osmUpper.includes(city) || city.includes(osmUpper)) {
       return province;
     }
   }
-  
+
   // Check if OSM province name contains our province names
   for (const province of ALLOWED_PROVINCES) {
     if (osmUpper.includes(province) || province.includes(osmUpper)) {
       return province;
     }
   }
-  
+
   return "";
 }
 
 // Helper function to find best match for city
 function findBestCityMatch(osmCity, selectedProvince) {
   if (!osmCity || !selectedProvince) return "";
-  
+
   const osmUpper = osmCity.toUpperCase();
   const availableCities = ILOCOS_CITIES_BY_PROVINCE[selectedProvince] || [];
-  
+
   // Direct match
   if (availableCities.includes(osmUpper)) {
     return osmUpper;
   }
-  
+
   // Fuzzy matching - check if OSM city contains or is contained in our cities
   for (const city of availableCities) {
     if (osmUpper.includes(city) || city.includes(osmUpper)) {
       return city;
     }
   }
-  
+
   return "";
 }
 
 // Helper function to find best match for barangay
 function findBestBarangayMatch(osmBarangay, selectedProvince, selectedCity) {
   if (!osmBarangay || !selectedProvince || !selectedCity) return "";
-  
+
   const osmUpper = osmBarangay.toUpperCase();
-  const availableBarangays = BARANGAYS_BY_CITY[selectedProvince]?.[selectedCity] || [];
-  
+  const availableBarangays =
+    BARANGAYS_BY_CITY[selectedProvince]?.[selectedCity] || [];
+
   // Direct match
   if (availableBarangays.includes(osmUpper)) {
     return osmUpper;
   }
-  
+
   // Fuzzy matching - check if OSM barangay contains or is contained in our barangays
   for (const barangay of availableBarangays) {
     if (osmUpper.includes(barangay) || barangay.includes(osmUpper)) {
       return barangay;
     }
   }
-  
+
   // Partial word matching for common patterns
   const osmWords = osmUpper.split(/\s+/);
   for (const barangay of availableBarangays) {
@@ -153,7 +164,7 @@ function findBestBarangayMatch(osmBarangay, selectedProvince, selectedCity) {
       }
     }
   }
-  
+
   return ""; // No match found, leave empty
 }
 
@@ -164,12 +175,18 @@ async function reverseGeocode(lat, lon, setFormData, setMapZoom) {
   const data = await res.json();
   if (data && data.address) {
     const osmProvince = data.address.state;
-    const osmCity = data.address.city || data.address.town || data.address.village;
-    const osmBarangay = data.address.suburb || data.address.neighbourhood || data.address.hamlet;
+    const osmCity =
+      data.address.city || data.address.town || data.address.village;
+    const osmBarangay =
+      data.address.suburb || data.address.neighbourhood || data.address.hamlet;
     const bestProvince = findBestProvinceMatch(osmProvince);
     const bestCity = findBestCityMatch(osmCity, bestProvince);
-    const bestBarangay = findBestBarangayMatch(osmBarangay, bestProvince, bestCity);
-    
+    const bestBarangay = findBestBarangayMatch(
+      osmBarangay,
+      bestProvince,
+      bestCity
+    );
+
     setFormData((prev) => ({
       ...prev,
       address: {
@@ -211,12 +228,7 @@ function LocationMarker({ formData, setFormData, setMapZoom }) {
     const marker = markerRef.current;
     if (marker != null) {
       const { lat, lng } = marker.getLatLng();
-      reverseGeocode(
-        lat.toFixed(6),
-        lng.toFixed(6),
-        setFormData,
-        setMapZoom
-      );
+      reverseGeocode(lat.toFixed(6), lng.toFixed(6), setFormData, setMapZoom);
     }
   };
 
@@ -236,7 +248,11 @@ function LocationMarker({ formData, setFormData, setMapZoom }) {
   ) : null;
 }
 
-export default function AddEstablishment({ onClose, onEstablishmentAdded, onPolygonCreate }) {
+export default function AddEstablishment({
+  onClose,
+  onEstablishmentAdded,
+  onPolygonCreate,
+}) {
   const [formData, setFormData] = useState({
     name: "",
     natureOfBusiness: "",
@@ -277,15 +293,15 @@ export default function AddEstablishment({ onClose, onEstablishmentAdded, onPoly
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
+
     // Handle name field specially
-    if (name === 'name') {
+    if (name === "name") {
       const upperValue = value.toUpperCase();
       setFormData((prev) => ({
         ...prev,
         [name]: upperValue,
       }));
-      
+
       // Trigger validation
       handleNameValidation(upperValue);
     } else {
@@ -293,7 +309,7 @@ export default function AddEstablishment({ onClose, onEstablishmentAdded, onPoly
         ...prev,
         [name]: value.toUpperCase(),
       }));
-      
+
       // Clear error when user starts typing (for other fields)
       if (errors[name]) {
         setErrors((prev) => ({ ...prev, [name]: "" }));
@@ -307,7 +323,8 @@ export default function AddEstablishment({ onClose, onEstablishmentAdded, onPoly
       ...prev,
       natureOfBusiness: value,
       // Clear "Others" textbox if a predefined option is selected
-      natureOfBusinessOther: value !== "OTHERS" ? "" : prev.natureOfBusinessOther,
+      natureOfBusinessOther:
+        value !== "OTHERS" ? "" : prev.natureOfBusinessOther,
     }));
     // Clear error when user starts typing
     if (errors.natureOfBusiness) {
@@ -341,31 +358,31 @@ export default function AddEstablishment({ onClose, onEstablishmentAdded, onPoly
     if (nameCheckTimeoutRef.current) {
       clearTimeout(nameCheckTimeoutRef.current);
     }
-    
+
     // Don't check if name is empty
     if (!name || name.trim().length === 0) {
       setNameExists(false);
       setErrors((prev) => ({ ...prev, name: "" }));
       return;
     }
-    
+
     // Debounce the check by 500ms
     nameCheckTimeoutRef.current = setTimeout(async () => {
       setValidatingName(true);
       try {
         const exists = await checkEstablishmentNameExists(name);
         setNameExists(exists);
-        
+
         if (exists) {
-          setErrors((prev) => ({ 
-            ...prev, 
-            name: "An establishment with this name already exists." 
+          setErrors((prev) => ({
+            ...prev,
+            name: "An establishment with this name already exists.",
           }));
         } else {
           setErrors((prev) => ({ ...prev, name: "" }));
         }
       } catch (error) {
-        console.error('Error validating name:', error);
+        console.error("Error validating name:", error);
       } finally {
         setValidatingName(false);
       }
@@ -374,10 +391,10 @@ export default function AddEstablishment({ onClose, onEstablishmentAdded, onPoly
 
   const handleAddressChange = async (e) => {
     const { name, value } = e.target;
-    
+
     // Skip uppercase for barangay (already uppercase in dropdown)
-    const processedValue = name === 'barangay' ? value : value.toUpperCase();
-    
+    const processedValue = name === "barangay" ? value : value.toUpperCase();
+
     const newFormData = {
       ...formData,
       address: {
@@ -389,7 +406,7 @@ export default function AddEstablishment({ onClose, onEstablishmentAdded, onPoly
         ...(name === "city" ? { barangay: "" } : {}),
       },
     };
-    
+
     setFormData(newFormData);
 
     // Clear province error when user starts typing
@@ -443,9 +460,18 @@ export default function AddEstablishment({ onClose, onEstablishmentAdded, onPoly
           },
         }));
       }
-    } else if (name === "barangay" && value && newFormData.address.province && newFormData.address.city) {
+    } else if (
+      name === "barangay" &&
+      value &&
+      newFormData.address.province &&
+      newFormData.address.city
+    ) {
       // Forward geocode to get barangay center coordinates when barangay is selected
-      const coords = await forwardGeocode(newFormData.address.province, newFormData.address.city, value);
+      const coords = await forwardGeocode(
+        newFormData.address.province,
+        newFormData.address.city,
+        value
+      );
       if (coords) {
         setFormData((prev) => ({
           ...prev,
@@ -505,9 +531,9 @@ export default function AddEstablishment({ onClose, onEstablishmentAdded, onPoly
     // Don't proceed if name exists or is being validated
     if (nameExists || validatingName) {
       if (nameExists) {
-        setErrors((prev) => ({ 
-          ...prev, 
-          name: "An establishment with this name already exists." 
+        setErrors((prev) => ({
+          ...prev,
+          name: "An establishment with this name already exists.",
         }));
       }
       return;
@@ -520,9 +546,11 @@ export default function AddEstablishment({ onClose, onEstablishmentAdded, onPoly
     }
 
     // Validate required fields
-    const isNatureOfBusinessValid = formData.natureOfBusiness.trim() && 
-      (formData.natureOfBusiness !== "OTHERS" || formData.natureOfBusinessOther.trim());
-    
+    const isNatureOfBusinessValid =
+      formData.natureOfBusiness.trim() &&
+      (formData.natureOfBusiness !== "OTHERS" ||
+        formData.natureOfBusinessOther.trim());
+
     if (
       !formData.name.trim() ||
       !isNatureOfBusinessValid ||
@@ -545,9 +573,10 @@ export default function AddEstablishment({ onClose, onEstablishmentAdded, onPoly
     setLoading(true);
     try {
       // Determine the final nature of business value
-      const finalNatureOfBusiness = formData.natureOfBusiness === "OTHERS" 
-        ? formData.natureOfBusinessOther.trim()
-        : formData.natureOfBusiness.trim();
+      const finalNatureOfBusiness =
+        formData.natureOfBusiness === "OTHERS"
+          ? formData.natureOfBusinessOther.trim()
+          : formData.natureOfBusiness.trim();
 
       const response = await createEstablishment({
         name: formData.name.trim(),
@@ -561,28 +590,33 @@ export default function AddEstablishment({ onClose, onEstablishmentAdded, onPoly
         latitude: formData.coordinates.latitude,
         longitude: formData.coordinates.longitude,
       });
-      
+
       // Store the created establishment
       setCreatedEstablishment(response);
-      
+
       // Show success notification with detailed information
       notifications.success(
-        (
-          <div className="text-left">
-            <p className="font-semibold mb-2">Name: {response.name}</p>
-            <p className="text-sm mb-1">Nature of Business: {response.nature_of_business}</p>
-            <p className="text-sm mb-1">Year Established: {response.year_established}</p>
-            <p className="text-sm">Address: {response.street_building}, {response.barangay}, {response.city}, {response.province}</p>
-          </div>
-        ),
+        <div className="text-left">
+          <p className="font-semibold mb-2">Name: {response.name}</p>
+          <p className="text-sm mb-1">
+            Nature of Business: {response.nature_of_business}
+          </p>
+          <p className="text-sm mb-1">
+            Year Established: {response.year_established}
+          </p>
+          <p className="text-sm">
+            Address: {response.street_building}, {response.barangay},{" "}
+            {response.city}, {response.province}
+          </p>
+        </div>,
         {
           title: "New Establishment Added",
-          duration: 5000
+          duration: 5000,
         }
       );
-      
+
       if (onEstablishmentAdded) onEstablishmentAdded();
-      
+
       // Close save confirmation and show polygon prompt
       setShowConfirm(false);
       setShowPolygonPrompt(true);
@@ -603,7 +637,7 @@ export default function AddEstablishment({ onClose, onEstablishmentAdded, onPoly
             (err.response?.data?.detail || JSON.stringify(err.response?.data)),
           {
             title: "Creation Failed",
-            duration: 8000
+            duration: 8000,
           }
         );
       }
@@ -625,17 +659,18 @@ export default function AddEstablishment({ onClose, onEstablishmentAdded, onPoly
   };
 
   const Label = ({ field, children }) => {
-    const isRequired = submitted && (
-      field.includes(".")
+    const isRequired =
+      submitted &&
+      (field.includes(".")
         ? !field
             .split(".")
             .reduce((o, i) => (o ? o[i] : ""), formData)
             ?.trim()
         : field === "natureOfBusiness"
-        ? !formData.natureOfBusiness?.trim() || 
-          (formData.natureOfBusiness === "OTHERS" && !formData.natureOfBusinessOther?.trim())
-        : !formData[field]?.trim()
-    );
+        ? !formData.natureOfBusiness?.trim() ||
+          (formData.natureOfBusiness === "OTHERS" &&
+            !formData.natureOfBusinessOther?.trim())
+        : !formData[field]?.trim());
 
     return (
       <label className="flex items-center justify-between text-sm font-medium text-gray-700">
@@ -678,17 +713,17 @@ export default function AddEstablishment({ onClose, onEstablishmentAdded, onPoly
                 value={formData.name}
                 onChange={handleChange}
                 className={`w-full p-2 pr-10 border rounded-lg uppercase-input ${
-                  errors.name 
-                    ? "border-red-500" 
-                    : nameExists 
-                    ? "border-amber-400 bg-amber-50" 
+                  errors.name
+                    ? "border-red-500"
+                    : nameExists
+                    ? "border-amber-400 bg-amber-50"
                     : validatingName
                     ? "border-blue-400"
                     : ""
                 }`}
                 placeholder="Enter establishment name"
               />
-              
+
               {/* Validation Status Icons */}
               {validatingName && (
                 <div className="absolute right-3 top-3">
@@ -697,18 +732,37 @@ export default function AddEstablishment({ onClose, onEstablishmentAdded, onPoly
               )}
               {nameExists && !validatingName && (
                 <div className="absolute right-3 top-3">
-                  <svg className="w-5 h-5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  <svg
+                    className="w-5 h-5 text-amber-500"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 </div>
               )}
-              {!nameExists && !validatingName && formData.name.trim() && !errors.name && (
-                <div className="absolute right-3 top-3">
-                  <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                </div>
-              )}
+              {!nameExists &&
+                !validatingName &&
+                formData.name.trim() &&
+                !errors.name && (
+                  <div className="absolute right-3 top-3">
+                    <svg
+                      className="w-5 h-5 text-green-500"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                )}
             </div>
           </div>
 
@@ -773,7 +827,11 @@ export default function AddEstablishment({ onClose, onEstablishmentAdded, onPoly
                 options={getAvailableCities()}
                 value={formData.address.city}
                 onChange={handleAddressChange}
-                placeholder={formData.address.province ? "Select City/Municipality" : "Select Province first"}
+                placeholder={
+                  formData.address.province
+                    ? "Select City/Municipality"
+                    : "Select Province first"
+                }
                 isDisabled={!formData.address.province}
                 className="w-full uppercase-input"
               />
@@ -789,7 +847,11 @@ export default function AddEstablishment({ onClose, onEstablishmentAdded, onPoly
                 options={getAvailableBarangays()}
                 value={formData.address.barangay}
                 onChange={handleAddressChange}
-                placeholder={formData.address.city ? "Select Barangay" : "Select City first"}
+                placeholder={
+                  formData.address.city
+                    ? "Select Barangay"
+                    : "Select City first"
+                }
                 isDisabled={!formData.address.city}
                 className="w-full uppercase-input"
               />
@@ -915,8 +977,13 @@ export default function AddEstablishment({ onClose, onEstablishmentAdded, onPoly
           title="Draw Polygon Boundary?"
           message={
             <div className="text-center">
-              <p className="mb-4">Would you like to draw a polygon boundary for this establishment now?</p>
-              <p className="text-sm text-gray-600">You can also add this later from the establishment list.</p>
+              <p className="mb-4">
+                Would you like to draw a polygon boundary for this establishment
+                now?
+              </p>
+              <p className="text-sm text-gray-600">
+                You can also add this later from the establishment list.
+              </p>
             </div>
           }
           loading={false}
@@ -934,14 +1001,14 @@ export default function AddEstablishment({ onClose, onEstablishmentAdded, onPoly
             formData.coordinates.longitude || ILOCOS_REGION_CENTER.longitude,
           ]}
           zoom={formData.coordinates.latitude ? mapZoom : 8} // Dynamic zoom based on selection type
-          style={{ 
-            height: "100%", 
+          style={{
+            height: "100%",
             width: "100%",
-            cursor: "default"
+            cursor: "default",
           }}
           bounds={[
             [ILOCOS_REGION_BOUNDS.south, ILOCOS_REGION_BOUNDS.west],
-            [ILOCOS_REGION_BOUNDS.north, ILOCOS_REGION_BOUNDS.east]
+            [ILOCOS_REGION_BOUNDS.north, ILOCOS_REGION_BOUNDS.east],
           ]}
           boundsOptions={{ padding: [20, 20] }}
         >
@@ -960,7 +1027,11 @@ export default function AddEstablishment({ onClose, onEstablishmentAdded, onPoly
               />
             </LayersControl.BaseLayer>
           </LayersControl>
-          <LocationMarker formData={formData} setFormData={setFormData} setMapZoom={setMapZoom} />
+          <LocationMarker
+            formData={formData}
+            setFormData={setFormData}
+            setMapZoom={setMapZoom}
+          />
         </MapContainer>
       </div>
     </div>

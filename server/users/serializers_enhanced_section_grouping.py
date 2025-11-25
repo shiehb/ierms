@@ -6,7 +6,7 @@ from .models_enhanced_section_grouping import (
 from notifications.models import Notification
 from django.conf import settings
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from system_config.models import SystemConfiguration
+from core.settings import generate_secure_password
 from .signals import user_created_with_password
 
 

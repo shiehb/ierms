@@ -22,7 +22,7 @@ class AccomplishmentReport(models.Model):
     report_type = models.CharField(max_length=20, choices=REPORT_TYPES, default='quarterly')
     
     # Quarterly period fields
-    quarter = models.IntegerField(choices=[(1, 'Q1'), (2, 'Q2'), (3, 'Q3'), (4, 'Q4')], help_text="Quarter number", default=1)
+    quarter = models.IntegerField(choices=[(1, 'First Quarter'), (2, 'Second Quarter'), (3, 'Third Quarter'), (4, 'Fourth Quarter')], help_text="Quarter number", default=1)
     year = models.IntegerField(help_text="Year of the report", default=2024)
     
     # Date fields

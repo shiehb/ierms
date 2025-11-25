@@ -4,10 +4,10 @@ import Footer from "../components/Footer";
 import LayoutWithSidebar from "../components/LayoutWithSidebar";
 import InspectionsList from "../components/inspections/InspectionsList";
 import SimpleInspectionWizard from "../components/inspections/SimpleInspectionWizard";
-import { 
-  getProfile, 
+import {
+  getProfile,
   getEstablishments,
-  getAvailableEstablishments, 
+  getAvailableEstablishments,
   createInspection,
   startInspection,
   completeInspection,
@@ -16,7 +16,7 @@ import {
   forwardToLegal,
   sendNOV,
   sendNOO,
-  closeInspection
+  closeInspection,
 } from "../services/api";
 import ComplianceModal from "../components/inspections/modals/ComplianceModal";
 import LegalUnitModal from "../components/inspections/modals/LegalUnitModal";
@@ -25,17 +25,32 @@ import CompleteModal from "../components/inspections/modals/CompleteModal";
 import ReviewModal from "../components/inspections/modals/ReviewModal";
 import NOVModal from "../components/inspections/modals/NOVModal";
 import NOOModal from "../components/inspections/modals/NOOModal";
-import { useNotifications } from "../components/NotificationManager";
+import { useNotifications } from "../hooks/useNotifications";
 
 export default function Inspections() {
   const notifications = useNotifications();
   const [showAdd, setShowAdd] = useState(false);
   const [workflowInspection, setWorkflowInspection] = useState(null);
-  const [complianceModal, setComplianceModal] = useState({ open: false, inspection: null });
-  const [legalUnitModal, setLegalUnitModal] = useState({ open: false, inspection: null });
-  const [forwardModal, setForwardModal] = useState({ open: false, inspection: null });
-  const [completeModal, setCompleteModal] = useState({ open: false, inspection: null });
-  const [reviewModal, setReviewModal] = useState({ open: false, inspection: null });
+  const [complianceModal, setComplianceModal] = useState({
+    open: false,
+    inspection: null,
+  });
+  const [legalUnitModal, setLegalUnitModal] = useState({
+    open: false,
+    inspection: null,
+  });
+  const [forwardModal, setForwardModal] = useState({
+    open: false,
+    inspection: null,
+  });
+  const [completeModal, setCompleteModal] = useState({
+    open: false,
+    inspection: null,
+  });
+  const [reviewModal, setReviewModal] = useState({
+    open: false,
+    inspection: null,
+  });
   const [novModal, setNovModal] = useState({ open: false, inspection: null });
   const [nooModal, setNooModal] = useState({ open: false, inspection: null });
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -50,53 +65,56 @@ export default function Inspections() {
     setRefreshTrigger((prev) => prev + 1);
   };
 
-  const handleWorkflowAction = async (inspection, actionType = 'inspect') => {
+  const handleWorkflowAction = async (inspection, actionType = "inspect") => {
     try {
       // Handle modal-based actions
-      if (actionType === 'forward') {
+      if (actionType === "forward") {
         setForwardModal({ open: true, inspection });
         return;
-      } else if (actionType === 'review') {
+      } else if (actionType === "review") {
         setReviewModal({ open: true, inspection });
         return;
-      } else if (actionType === 'send_nov') {
+      } else if (actionType === "send_nov") {
         setNovModal({ open: true, inspection });
         return;
-      } else if (actionType === 'send_noo') {
+      } else if (actionType === "send_noo") {
         setNooModal({ open: true, inspection });
         return;
-      } else if (actionType === 'complete') {
+      } else if (actionType === "complete") {
         setCompleteModal({ open: true, inspection });
         return;
       }
 
       let result;
-      let actionMessage = '';
-      
+      let actionMessage = "";
+
       // Call the appropriate backend API based on current status and action
-      if (actionType === 'start') {
+      if (actionType === "start") {
         result = await startInspection(inspection.id);
         actionMessage = `Inspection ${inspection.code} has been started.`;
-      } else if (actionType === 'forward_to_legal') {
-        result = await forwardToLegal(inspection.id, { remarks: 'Forwarded to Legal Unit' });
+      } else if (actionType === "forward_to_legal") {
+        result = await forwardToLegal(inspection.id, {
+          remarks: "Forwarded to Legal Unit",
+        });
         actionMessage = `Inspection ${inspection.code} has been forwarded to Legal Unit.`;
-      } else if (actionType === 'close') {
-        result = await closeInspection(inspection.id, { remarks: 'Inspection closed' });
+      } else if (actionType === "close") {
+        result = await closeInspection(inspection.id, {
+          remarks: "Inspection closed",
+        });
         actionMessage = `Inspection ${inspection.code} has been closed.`;
       } else {
         // Fallback for other actions
         actionMessage = `Workflow action for inspection: ${inspection.code}\nStatus: ${inspection.status}`;
       }
-      
+
       // Show success message
       notifications.success(actionMessage);
       setWorkflowInspection(null);
-      
+
       // Refresh the inspections list to show updated data
       refreshInspections();
-      
     } catch (error) {
-      console.error('Workflow action error:', error);
+      console.error("Workflow action error:", error);
       notifications.error(`Error performing workflow action: ${error.message}`);
       setWorkflowInspection(null);
     }
@@ -109,9 +127,9 @@ export default function Inspections() {
       await completeInspection(complianceModal.inspection.id, complianceData);
       setComplianceModal({ open: false, inspection: null });
       refreshInspections();
-      notifications.success('Compliance status updated successfully!');
+      notifications.success("Compliance status updated successfully!");
     } catch (error) {
-      console.error('Error updating compliance:', error);
+      console.error("Error updating compliance:", error);
       notifications.error(`Error updating compliance: ${error.message}`);
     }
   };
@@ -120,21 +138,25 @@ export default function Inspections() {
   const handleLegalUnitSubmit = async (actionType, formData) => {
     try {
       switch (actionType) {
-        case 'send_nov':
+        case "send_nov":
           await sendNOV(legalUnitModal.inspection.id, formData);
           break;
-        case 'send_noo':
+        case "send_noo":
           await sendNOO(legalUnitModal.inspection.id, formData);
           break;
         default:
-          throw new Error('Invalid action type');
+          throw new Error("Invalid action type");
       }
-      
+
       setLegalUnitModal({ open: false, inspection: null });
       refreshInspections();
-      notifications.success(`${actionType.replace('_', ' ').toUpperCase()} action completed successfully!`);
+      notifications.success(
+        `${actionType
+          .replace("_", " ")
+          .toUpperCase()} action completed successfully!`
+      );
     } catch (error) {
-      console.error('Error performing Legal Unit action:', error);
+      console.error("Error performing Legal Unit action:", error);
       notifications.error(`Error performing action: ${error.message}`);
     }
   };
@@ -145,9 +167,9 @@ export default function Inspections() {
       await forwardInspection(inspectionId, formData);
       setForwardModal({ open: false, inspection: null });
       refreshInspections();
-      notifications.success('Inspection forwarded successfully!');
+      notifications.success("Inspection forwarded successfully!");
     } catch (error) {
-      console.error('Error forwarding inspection:', error);
+      console.error("Error forwarding inspection:", error);
       notifications.error(`Error forwarding inspection: ${error.message}`);
     }
   };
@@ -158,9 +180,9 @@ export default function Inspections() {
       await completeInspection(inspectionId, formData);
       setCompleteModal({ open: false, inspection: null });
       refreshInspections();
-      notifications.success('Inspection completed successfully!');
+      notifications.success("Inspection completed successfully!");
     } catch (error) {
-      console.error('Error completing inspection:', error);
+      console.error("Error completing inspection:", error);
       notifications.error(`Error completing inspection: ${error.message}`);
     }
   };
@@ -171,9 +193,9 @@ export default function Inspections() {
       await reviewInspection(inspectionId, formData);
       setReviewModal({ open: false, inspection: null });
       refreshInspections();
-      notifications.success('Review submitted successfully!');
+      notifications.success("Review submitted successfully!");
     } catch (error) {
-      console.error('Error submitting review:', error);
+      console.error("Error submitting review:", error);
       notifications.error(`Error submitting review: ${error.message}`);
     }
   };
@@ -186,9 +208,9 @@ export default function Inspections() {
       await sendNOV(novModal.inspection.id, formData);
       setNovModal({ open: false, inspection: null });
       refreshInspections();
-      notifications.success('Notice of Violation sent successfully!');
+      notifications.success("Notice of Violation sent successfully!");
     } catch (error) {
-      console.error('Error sending NOV:', error);
+      console.error("Error sending NOV:", error);
       notifications.error(`Error sending NOV: ${error.message}`);
     } finally {
       setNovLoading(false);
@@ -203,9 +225,9 @@ export default function Inspections() {
       await sendNOO(nooModal.inspection.id, formData);
       setNooModal({ open: false, inspection: null });
       refreshInspections();
-      notifications.success('Notice of Order sent successfully!');
+      notifications.success("Notice of Order sent successfully!");
     } catch (error) {
-      console.error('Error sending NOO:', error);
+      console.error("Error sending NOO:", error);
       notifications.error(`Error sending NOO: ${error.message}`);
     } finally {
       setNooLoading(false);
@@ -213,68 +235,90 @@ export default function Inspections() {
   };
 
   // Fetch available establishments for the wizard - only those not under active inspection
-  const fetchEstablishments = useCallback(async (searchQuery = '', page = 1, pageSize = 100) => {
-    setEstablishmentsLoading(true);
-    try {
-      // Use the new available establishments endpoint
-      const response = await getAvailableEstablishments({
-        page: page,
-        page_size: pageSize,
-        ...(searchQuery && searchQuery.length >= 2 && { search: searchQuery }),
-      });
+  const fetchEstablishments = useCallback(
+    async (searchQuery = "", page = 1, pageSize = 100) => {
+      setEstablishmentsLoading(true);
+      try {
+        // Use the new available establishments endpoint
+        const response = await getAvailableEstablishments({
+          page: page,
+          page_size: pageSize,
+          ...(searchQuery &&
+            searchQuery.length >= 2 && { search: searchQuery }),
+        });
 
-      if (response.results) {
-        // Transform the data to match the expected format for wizard
-        const transformedEstablishments = response.results.map(est => ({
-          id: est.id,
-          name: est.name,
-          address: `${est.street_building || ''}, ${est.barangay || ''}, ${est.city || ''}, ${est.province || ''}, ${est.postal_code || ''}`.replace(/,\s*,/g, ',').replace(/^,\s*|,\s*$/g, ''),
-          coordinates: `${est.latitude || ''}, ${est.longitude || ''}`.replace(/,\s*,/g, ',').replace(/^,\s*|,\s*$/g, ''),
-          nature_of_business: est.nature_of_business || 'N/A',
-          year_established: est.year_established || 'N/A'
-        }));
-        setEstablishments(transformedEstablishments);
-      } else {
-        // Fallback for non-paginated response
-        const transformedEstablishments = response.map(est => ({
-          id: est.id,
-          name: est.name,
-          address: `${est.street_building || ''}, ${est.barangay || ''}, ${est.city || ''}, ${est.province || ''}, ${est.postal_code || ''}`.replace(/,\s*,/g, ',').replace(/^,\s*|,\s*$/g, ''),
-          coordinates: `${est.latitude || ''}, ${est.longitude || ''}`.replace(/,\s*,/g, ',').replace(/^,\s*|,\s*$/g, ''),
-          nature_of_business: est.nature_of_business || 'N/A',
-          year_established: est.year_established || 'N/A'
-        }));
-        setEstablishments(transformedEstablishments);
-      }
-    } catch (error) {
-      console.error("Error fetching available establishments:", error);
-      // Fallback to mock data on error
-      setEstablishments([
-        {
-          id: 1,
-          name: "ABC Manufacturing Corp.",
-          address: "123 Industrial St, San Fernando, La Union",
-          coordinates: "16.6164, 120.3162",
-          nature_of_business: "Manufacturing",
-          year_established: "2015"
-        },
-        {
-          id: 2,
-          name: "XYZ Industries Inc.",
-          address: "456 Business Ave, Bauang, La Union",
-          coordinates: "16.5308, 120.3331",
-          nature_of_business: "Industrial Processing",
-          year_established: "2018"
+        if (response.results) {
+          // Transform the data to match the expected format for wizard
+          const transformedEstablishments = response.results.map((est) => ({
+            id: est.id,
+            name: est.name,
+            address: `${est.street_building || ""}, ${est.barangay || ""}, ${
+              est.city || ""
+            }, ${est.province || ""}, ${est.postal_code || ""}`
+              .replace(/,\s*,/g, ",")
+              .replace(/^,\s*|,\s*$/g, ""),
+            coordinates: `${est.latitude || ""}, ${est.longitude || ""}`
+              .replace(/,\s*,/g, ",")
+              .replace(/^,\s*|,\s*$/g, ""),
+            nature_of_business: est.nature_of_business || "N/A",
+            year_established: est.year_established || "N/A",
+          }));
+          setEstablishments(transformedEstablishments);
+        } else {
+          // Fallback for non-paginated response
+          const transformedEstablishments = response.map((est) => ({
+            id: est.id,
+            name: est.name,
+            address: `${est.street_building || ""}, ${est.barangay || ""}, ${
+              est.city || ""
+            }, ${est.province || ""}, ${est.postal_code || ""}`
+              .replace(/,\s*,/g, ",")
+              .replace(/^,\s*|,\s*$/g, ""),
+            coordinates: `${est.latitude || ""}, ${est.longitude || ""}`
+              .replace(/,\s*,/g, ",")
+              .replace(/^,\s*|,\s*$/g, ""),
+            nature_of_business: est.nature_of_business || "N/A",
+            year_established: est.year_established || "N/A",
+          }));
+          setEstablishments(transformedEstablishments);
         }
-      ]);
-    } finally {
-      setEstablishmentsLoading(false);
-    }
-  }, []); // Empty dependency array since this function doesn't depend on any props or state
+      } catch (error) {
+        console.error("Error fetching available establishments:", error);
+        // Fallback to mock data on error
+        setEstablishments([
+          {
+            id: 1,
+            name: "ABC Manufacturing Corp.",
+            address: "123 Industrial St, San Fernando, La Union",
+            coordinates: "16.6164, 120.3162",
+            nature_of_business: "Manufacturing",
+            year_established: "2015",
+          },
+          {
+            id: 2,
+            name: "XYZ Industries Inc.",
+            address: "456 Business Ave, Bauang, La Union",
+            coordinates: "16.5308, 120.3331",
+            nature_of_business: "Industrial Processing",
+            year_established: "2018",
+          },
+        ]);
+      } finally {
+        setEstablishmentsLoading(false);
+      }
+    },
+    []
+  ); // Empty dependency array since this function doesn't depend on any props or state
 
   // Create stable callback functions for wizard props
-  const handleRefreshEstablishments = useCallback(() => fetchEstablishments(), [fetchEstablishments]);
-  const handleSearchEstablishments = useCallback((searchQuery) => fetchEstablishments(searchQuery), [fetchEstablishments]);
+  const handleRefreshEstablishments = useCallback(
+    () => fetchEstablishments(),
+    [fetchEstablishments]
+  );
+  const handleSearchEstablishments = useCallback(
+    (searchQuery) => fetchEstablishments(searchQuery),
+    [fetchEstablishments]
+  );
 
   // Fetch user profile to get actual user level
   useEffect(() => {
@@ -309,14 +353,12 @@ export default function Inspections() {
     fetchEstablishments();
   }, [fetchEstablishments]);
 
-
-
   const [laws] = useState([
     { code: "PD-1586", name: "EIA Monitoring" },
     { code: "RA-8749", name: "Air Quality Monitoring" },
     { code: "RA-9275", name: "Water Quality Monitoring" },
     { code: "RA-6969", name: "Toxic Chemicals Monitoring" },
-    { code: "RA-9003", name: "Solid Waste Management" }
+    { code: "RA-9003", name: "Solid Waste Management" },
   ]);
 
   // Show loading state while fetching user profile
@@ -344,33 +386,42 @@ export default function Inspections() {
         onClose={() => setShowAdd(false)}
         onSave={async (formData) => {
           try {
-            const selectedLaw = laws.find(law => law.code === formData.law_code);
+            const selectedLaw = laws.find(
+              (law) => law.code === formData.law_code
+            );
             const establishmentCount = formData.establishment_ids.length;
-            
+
             // Create inspection for each selected establishment
-            const inspectionPromises = formData.establishment_ids.map(establishmentId => {
-              const inspectionData = {
-                establishments: [establishmentId],
-                law: formData.law_code,
-                scheduled_at: formData.scheduled_at || null,
-                inspection_notes: `Inspection for ${selectedLaw?.name || formData.law_code}`,
-                // The backend will handle auto-assignment based on the workflow rules
-              };
-              return createInspection(inspectionData);
-            });
-            
+            const inspectionPromises = formData.establishment_ids.map(
+              (establishmentId) => {
+                const inspectionData = {
+                  establishments: [establishmentId],
+                  law: formData.law_code,
+                  scheduled_at: formData.scheduled_at || null,
+                  inspection_notes: `Inspection for ${
+                    selectedLaw?.name || formData.law_code
+                  }`,
+                  // The backend will handle auto-assignment based on the workflow rules
+                };
+                return createInspection(inspectionData);
+              }
+            );
+
             // Create all inspections in parallel
             const createdInspections = await Promise.all(inspectionPromises);
-            
+
             // Close wizard and refresh list
             setShowAdd(false);
             refreshInspections();
-            
+
             // Show success message
-            notifications.success(`Successfully created ${establishmentCount} inspection(s) for ${selectedLaw?.name || formData.law_code}!`);
-            
+            notifications.success(
+              `Successfully created ${establishmentCount} inspection(s) for ${
+                selectedLaw?.name || formData.law_code
+              }!`
+            );
           } catch (error) {
-            console.error('Error creating inspections:', error);
+            console.error("Error creating inspections:", error);
             notifications.error(`Error creating inspections: ${error.message}`);
           }
         }}
@@ -394,9 +445,15 @@ export default function Inspections() {
           <InspectionsList
             userLevel={userLevel}
             onAdd={() => setShowAdd(true)}
-            onWorkflow={(inspection, actionType) => setWorkflowInspection({...inspection, actionType})}
-            onCompliance={(inspection) => setComplianceModal({ open: true, inspection })}
-            onLegalUnit={(inspection) => setLegalUnitModal({ open: true, inspection })}
+            onWorkflow={(inspection, actionType) =>
+              setWorkflowInspection({ ...inspection, actionType })
+            }
+            onCompliance={(inspection) =>
+              setComplianceModal({ open: true, inspection })
+            }
+            onLegalUnit={(inspection) =>
+              setLegalUnitModal({ open: true, inspection })
+            }
             refreshTrigger={refreshTrigger}
           />
 
@@ -405,13 +462,25 @@ export default function Inspections() {
             <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/30 backdrop-blur-sm">
               <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Workflow Action</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Workflow Action
+                  </h3>
                   <button
                     onClick={() => setWorkflowInspection(null)}
                     className="text-gray-400 hover:text-gray-600"
                   >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -423,47 +492,55 @@ export default function Inspections() {
                     <strong>Current Status:</strong> {workflowInspection.status}
                   </p>
                   <p className="text-sm text-gray-600 mb-2">
-                    <strong>Establishment:</strong> {workflowInspection.establishment_name}
+                    <strong>Establishment:</strong>{" "}
+                    {workflowInspection.establishment_name}
                   </p>
-                  {workflowInspection.status === 'DIVISION_CREATED' && (
+                  {workflowInspection.status === "DIVISION_CREATED" && (
                     <div className="mt-3 p-3 bg-blue-50 rounded-md">
                       <p className="text-sm text-blue-800">
-                        <strong>Action:</strong> This will move the inspection to "My Inspections" tab with SECTION_INSPECTING status.
+                        <strong>Action:</strong> This will move the inspection
+                        to "My Inspections" tab with SECTION_INSPECTING status.
                       </p>
                     </div>
                   )}
-                  {workflowInspection.status === 'SECTION_INSPECTING' && (
+                  {workflowInspection.status === "SECTION_INSPECTING" && (
                     <div className="mt-3 p-3 bg-green-50 rounded-md">
                       <p className="text-sm text-green-800">
-                        <strong>Action:</strong> This will complete the inspection or forward it to the next stage.
+                        <strong>Action:</strong> This will complete the
+                        inspection or forward it to the next stage.
                       </p>
                     </div>
                   )}
-                  {workflowInspection.status === 'UNIT_REVIEW' && (
+                  {workflowInspection.status === "UNIT_REVIEW" && (
                     <div className="mt-3 p-3 bg-purple-50 rounded-md">
                       <p className="text-sm text-purple-800">
-                        <strong>Action:</strong> This will move the inspection to "My Inspections" tab with UNIT_INSPECTING status.
+                        <strong>Action:</strong> This will move the inspection
+                        to "My Inspections" tab with UNIT_INSPECTING status.
                       </p>
                     </div>
                   )}
-                  {workflowInspection.status === 'UNIT_INSPECTING' && (
+                  {workflowInspection.status === "UNIT_INSPECTING" && (
                     <div className="mt-3 p-3 bg-indigo-50 rounded-md">
                       <p className="text-sm text-indigo-800">
-                        <strong>Action:</strong> This will complete the inspection or forward it to Monitoring Personnel.
+                        <strong>Action:</strong> This will complete the
+                        inspection or forward it to Monitoring Personnel.
                       </p>
                     </div>
                   )}
-                  {workflowInspection.status === 'MONITORING_INSPECTION' && (
+                  {workflowInspection.status === "MONITORING_INSPECTION" && (
                     <div className="mt-3 p-3 bg-cyan-50 rounded-md">
                       <p className="text-sm text-cyan-800">
-                        <strong>Action:</strong> This will complete the inspection and initiate the return path based on compliance status.
+                        <strong>Action:</strong> This will complete the
+                        inspection and initiate the return path based on
+                        compliance status.
                       </p>
                     </div>
                   )}
-                  {workflowInspection.status === 'LEGAL_REVIEW' && (
+                  {workflowInspection.status === "LEGAL_REVIEW" && (
                     <div className="mt-3 p-3 bg-red-50 rounded-md">
                       <p className="text-sm text-red-800">
-                        <strong>Action:</strong> This will send notices to the establishment or close the case.
+                        <strong>Action:</strong> This will send notices to the
+                        establishment or close the case.
                       </p>
                     </div>
                   )}
@@ -476,7 +553,12 @@ export default function Inspections() {
                     Cancel
                   </button>
                   <button
-                    onClick={() => handleWorkflowAction(workflowInspection, workflowInspection.actionType)}
+                    onClick={() =>
+                      handleWorkflowAction(
+                        workflowInspection,
+                        workflowInspection.actionType
+                      )
+                    }
                     className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
                   >
                     Execute Action
@@ -490,7 +572,9 @@ export default function Inspections() {
           <ComplianceModal
             open={complianceModal.open}
             inspection={complianceModal.inspection}
-            onClose={() => setComplianceModal({ open: false, inspection: null })}
+            onClose={() =>
+              setComplianceModal({ open: false, inspection: null })
+            }
             onSubmit={handleComplianceSubmit}
           />
 
@@ -546,10 +630,9 @@ export default function Inspections() {
             onSubmit={handleNOOSubmit}
             loading={nooLoading}
           />
-
-                </div>
-        </LayoutWithSidebar>
+        </div>
+      </LayoutWithSidebar>
       <Footer />
-            </>
+    </>
   );
 }

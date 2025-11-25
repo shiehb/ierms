@@ -1,16 +1,16 @@
 import { useState, useRef, useEffect } from "react";
-import { useNotifications } from "../../components/NotificationManager";
+import { useNotifications } from "../../hooks/useNotifications";
 import ConfirmationDialog from "../common/ConfirmationDialog";
 import * as lawApi from "../../services/lawApi";
 
 export default function AddLawModal({ onClose, onLawAdded }) {
   const [formData, setFormData] = useState({
-  law_title: "",
-  reference_code: "",
-  description: "",
-  category: "",
-  effective_date: "",
-  status: "Active",
+    law_title: "",
+    reference_code: "",
+    description: "",
+    category: "",
+    effective_date: "",
+    status: "Active",
   });
   const [submitted, setSubmitted] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -40,13 +40,13 @@ export default function AddLawModal({ onClose, onLawAdded }) {
     if (codeCheckTimeoutRef.current) {
       clearTimeout(codeCheckTimeoutRef.current);
     }
-    
+
     // Don't check if code is empty
     if (!code || code.trim().length === 0) {
       setCodeExists(false);
       return;
     }
-    
+
     // Debounce the check by 500ms
     codeCheckTimeoutRef.current = setTimeout(async () => {
       setValidatingCode(true);
@@ -54,7 +54,7 @@ export default function AddLawModal({ onClose, onLawAdded }) {
         const exists = await lawApi.checkReferenceCodeExists(code);
         setCodeExists(exists);
       } catch (error) {
-        console.error('Error validating reference code:', error);
+        console.error("Error validating reference code:", error);
       } finally {
         setValidatingCode(false);
       }
@@ -66,13 +66,13 @@ export default function AddLawModal({ onClose, onLawAdded }) {
     if (titleCheckTimeoutRef.current) {
       clearTimeout(titleCheckTimeoutRef.current);
     }
-    
+
     // Don't check if title is empty or too short
     if (!title || title.trim().length < 3) {
       setTitleExists(false);
       return;
     }
-    
+
     // Debounce the check by 500ms
     titleCheckTimeoutRef.current = setTimeout(async () => {
       setValidatingTitle(true);
@@ -80,7 +80,7 @@ export default function AddLawModal({ onClose, onLawAdded }) {
         const exists = await lawApi.checkLawTitleExists(title);
         setTitleExists(exists);
       } catch (error) {
-        console.error('Error validating law title:', error);
+        console.error("Error validating law title:", error);
       } finally {
         setValidatingTitle(false);
       }
@@ -89,12 +89,12 @@ export default function AddLawModal({ onClose, onLawAdded }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
-    if (name === 'reference_code') {
+
+    if (name === "reference_code") {
       const upperValue = value.toUpperCase();
       setFormData((prev) => ({ ...prev, [name]: upperValue }));
       handleReferenceCodeValidation(upperValue);
-    } else if (name === 'law_title') {
+    } else if (name === "law_title") {
       setFormData((prev) => ({ ...prev, [name]: value }));
       handleLawTitleValidation(value);
     } else {
@@ -163,10 +163,20 @@ export default function AddLawModal({ onClose, onLawAdded }) {
           Do you wish to proceed with creating this law?
         </p>
         <div className="text-sm text-gray-600 border-l-4 border-sky-400 pl-3 py-2 bg-sky-50 space-y-1">
-          <p><span className="font-medium">Code:</span> {formData.reference_code || "N/A"}</p>
-          <p><span className="font-medium">Law:</span> {formData.law_title}</p>
-          <p><span className="font-medium">Category:</span> {formData.category}</p>
-          <p><span className="font-medium">Effective Date:</span> {formData.effective_date}</p>
+          <p>
+            <span className="font-medium">Code:</span>{" "}
+            {formData.reference_code || "N/A"}
+          </p>
+          <p>
+            <span className="font-medium">Law:</span> {formData.law_title}
+          </p>
+          <p>
+            <span className="font-medium">Category:</span> {formData.category}
+          </p>
+          <p>
+            <span className="font-medium">Effective Date:</span>{" "}
+            {formData.effective_date}
+          </p>
         </div>
       </div>
     );
@@ -174,35 +184,45 @@ export default function AddLawModal({ onClose, onLawAdded }) {
 
   const Label = ({ field, children, required = true }) => {
     const hasError = submitted && required && !formData[field]?.trim();
-    const isTooShort = submitted && formData[field]?.trim() && (
-      (field === "law_title" && formData[field].trim().length < 3) ||
-      (field === "description" && formData[field].trim().length < 10) ||
-      (field === "category" && formData[field].trim().length < 2)
-    );
+    const isTooShort =
+      submitted &&
+      formData[field]?.trim() &&
+      ((field === "law_title" && formData[field].trim().length < 3) ||
+        (field === "description" && formData[field].trim().length < 10) ||
+        (field === "category" && formData[field].trim().length < 2));
 
     return (
       <label className="flex items-center justify-between text-sm font-medium text-gray-700">
         <span>
           {children} {required && <span className="text-red-500">*</span>}
         </span>
-        {field === "reference_code" && formData.reference_code && codeExists && (
-          <span className="text-xs text-amber-600 font-medium">
-            Code already exists
-          </span>
-        )}
+        {field === "reference_code" &&
+          formData.reference_code &&
+          codeExists && (
+            <span className="text-xs text-amber-600 font-medium">
+              Code already exists
+            </span>
+          )}
         {field === "law_title" && formData.law_title && titleExists && (
           <span className="text-xs text-amber-600 font-medium">
             Title already exists
           </span>
         )}
-        {field !== "reference_code" && field !== "law_title" && hasError && <span className="text-xs text-red-500">Required</span>}
-        {field !== "reference_code" && field !== "law_title" && isTooShort && !hasError && (
-          <span className="text-xs text-red-500">
-            {field === "description" && "Min 10 characters"}
-            {field === "category" && "Min 2 characters"}
-          </span>
+        {field !== "reference_code" && field !== "law_title" && hasError && (
+          <span className="text-xs text-red-500">Required</span>
         )}
-        {field === "law_title" && hasError && <span className="text-xs text-red-500">Required</span>}
+        {field !== "reference_code" &&
+          field !== "law_title" &&
+          isTooShort &&
+          !hasError && (
+            <span className="text-xs text-red-500">
+              {field === "description" && "Min 10 characters"}
+              {field === "category" && "Min 2 characters"}
+            </span>
+          )}
+        {field === "law_title" && hasError && (
+          <span className="text-xs text-red-500">Required</span>
+        )}
         {field === "law_title" && isTooShort && !hasError && !titleExists && (
           <span className="text-xs text-red-500">Min 3 characters</span>
         )}
@@ -238,7 +258,7 @@ export default function AddLawModal({ onClose, onLawAdded }) {
                 }`}
                 placeholder="e.g., RA-8749"
               />
-              
+
               {/* Validation Status Icons */}
               {validatingCode && (
                 <div className="absolute right-3 top-3">
@@ -247,18 +267,36 @@ export default function AddLawModal({ onClose, onLawAdded }) {
               )}
               {codeExists && !validatingCode && (
                 <div className="absolute right-3 top-3">
-                  <svg className="w-5 h-5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  <svg
+                    className="w-5 h-5 text-amber-500"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 </div>
               )}
-              {!codeExists && !validatingCode && formData.reference_code.trim() && (
-                <div className="absolute right-3 top-3">
-                  <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                </div>
-              )}
+              {!codeExists &&
+                !validatingCode &&
+                formData.reference_code.trim() && (
+                  <div className="absolute right-3 top-3">
+                    <svg
+                      className="w-5 h-5 text-green-500"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                )}
             </div>
           </div>
           <div>
@@ -270,7 +308,9 @@ export default function AddLawModal({ onClose, onLawAdded }) {
                 value={formData.law_title}
                 onChange={handleChange}
                 className={`w-full p-2 pr-10 border rounded-lg ${
-                  submitted && (!formData.law_title.trim() || formData.law_title.trim().length < 3)
+                  submitted &&
+                  (!formData.law_title.trim() ||
+                    formData.law_title.trim().length < 3)
                     ? "border-red-500"
                     : titleExists
                     ? "border-amber-400 bg-amber-50"
@@ -280,7 +320,7 @@ export default function AddLawModal({ onClose, onLawAdded }) {
                 }`}
                 placeholder="e.g., Philippine Clean Air Act"
               />
-              
+
               {/* Validation Status Icons */}
               {validatingTitle && (
                 <div className="absolute right-3 top-3">
@@ -289,18 +329,37 @@ export default function AddLawModal({ onClose, onLawAdded }) {
               )}
               {titleExists && !validatingTitle && (
                 <div className="absolute right-3 top-3">
-                  <svg className="w-5 h-5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  <svg
+                    className="w-5 h-5 text-amber-500"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 </div>
               )}
-              {!titleExists && !validatingTitle && formData.law_title.trim() && formData.law_title.trim().length >= 3 && (
-                <div className="absolute right-3 top-3">
-                  <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                </div>
-              )}
+              {!titleExists &&
+                !validatingTitle &&
+                formData.law_title.trim() &&
+                formData.law_title.trim().length >= 3 && (
+                  <div className="absolute right-3 top-3">
+                    <svg
+                      className="w-5 h-5 text-green-500"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                )}
             </div>
           </div>
         </div>
@@ -315,7 +374,9 @@ export default function AddLawModal({ onClose, onLawAdded }) {
               value={formData.category}
               onChange={handleChange}
               className={`w-full p-2 border rounded-lg ${
-                submitted && (!formData.category.trim() || formData.category.trim().length < 2)
+                submitted &&
+                (!formData.category.trim() ||
+                  formData.category.trim().length < 2)
                   ? "border-red-500"
                   : "border-gray-300"
               }`}
@@ -347,7 +408,9 @@ export default function AddLawModal({ onClose, onLawAdded }) {
             onChange={handleChange}
             rows={5}
             className={`w-full p-2 border rounded-lg ${
-              submitted && (!formData.description.trim() || formData.description.trim().length < 10)
+              submitted &&
+              (!formData.description.trim() ||
+                formData.description.trim().length < 10)
                 ? "border-red-500"
                 : "border-gray-300"
             }`}
@@ -357,9 +420,9 @@ export default function AddLawModal({ onClose, onLawAdded }) {
 
         {/* Buttons */}
         <div className="flex gap-4 pt-2">
-      <button
-        type="button"
-        onClick={onClose}
+          <button
+            type="button"
+            onClick={onClose}
             className="flex-1 py-3 font-medium text-gray-700 transition bg-gray-300 rounded-lg hover:bg-gray-400"
           >
             Cancel
@@ -369,7 +432,7 @@ export default function AddLawModal({ onClose, onLawAdded }) {
             className="flex-1 py-3 font-medium text-white transition rounded-lg bg-sky-600 hover:bg-sky-700"
           >
             Save
-      </button>
+          </button>
         </div>
       </form>
 
@@ -387,4 +450,3 @@ export default function AddLawModal({ onClose, onLawAdded }) {
     </div>
   );
 }
-

@@ -20,7 +20,6 @@ urlpatterns = [
     # Users / Notifications / System config
     path('api/auth/', include('users.urls')),
     path('api/notifications/', include('notifications.urls')),
-    path('api/system/', include('system_config.urls')),
     path('api/reports/', include('reports.urls')),
     path('api/help/', include('help.urls')),
     path('api/', include('laws.urls')),

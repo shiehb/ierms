@@ -22,9 +22,7 @@ import Billing from "./pages/Billing";
 import Map from "./pages/Map";
 import Layout from "./Layout";
 import HelpEditor from "./pages/HelpEditor";
-import SystemConfiguration from "./pages/SystemConfiguration";
-import DatabaseBackup from "./pages/DatabaseBackup"; // ✅ import new page
-import AccomplishmentReports from "./pages/AccomplishmentReports";
+import DatabaseBackup from "./pages/DatabaseBackup";
 import DebugActions from "./components/inspections/DebugActions";
 import InspectionForm from "./components/inspection-form/InspectionForm";
 import NotFound from "./pages/NotFound";
@@ -37,12 +35,6 @@ import NotificationContainer from "./components/NotificationManager";
 import LawManagement from "./pages/LawManagement";
 import AuditLogs from "./pages/AuditLogs";
 import ReinspectionRemindersPage from "./pages/ReinspectionReminders";
-import LegalReports from "./pages/LegalReports";
-import DivisionReports from "./pages/DivisionReports";
-import SectionReports from "./pages/SectionReports";
-import UnitReports from "./pages/UnitReports";
-import MonitoringReports from "./pages/MonitoringReports";
-import AdminReports from "./pages/AdminReports";
 import Reports from "./pages/Reports";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
@@ -51,187 +43,143 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <AuthProvider>
         <SearchProvider>
           <NotificationContainer />
-        <Routes>
-          {/* Public routes without notifications */}
-          <Route
-            path="/login"
-            element={
-              <PublicRoute restricted={true}>
-                <Login />
-              </PublicRoute>
-            }
-          />
-          <Route
-            path="/forgot-password"
-            element={
-              <PublicRoute>
-                <ForgotPassword />
-              </PublicRoute>
-            }
-          />
-          <Route
-            path="/reset-password"
-            element={
-              <PublicRoute>
-                <ResetPassword />
-              </PublicRoute>
-            }
-          />
-          <Route
-            path="/force-change-password"
-            element={
-              <PublicRoute>
-                <ForceChangePassword />
-              </PublicRoute>
-            }
-          />
-          <Route
-            path="/change-password"
-            element={
-              <PrivateRoute>
-                <ChangePassword />
-              </PrivateRoute>
-            }
-          />
-
-          {/* Protected routes with notifications */}
-          <Route
-            path="/"
-            element={
-              <PrivateRoute>
-                <Layout />
-              </PrivateRoute>
-            }
-          >
-            <Route index element={<Dashboard />} />
-            <Route path="/users" element={<Users />} />
-            <Route path="/map" element={<Map />} />
-            <Route path="/establishments" element={<Establishments />} />
-            <Route path="/inspections" element={<Inspections />} />
-            <Route path="/inspections/:id/view" element={<InspectionView />} />
-            <Route path="/inspections/:id/form" element={<InspectionForm />} />
-            <Route path="/inspections/:id/review" element={<InspectionReviewPage />} />
-            <Route path="/inspections/:id/report-view" element={<InspectionReportViewPage />} />
-            <Route path="/debug-actions" element={<DebugActions />} />
-
+          <Routes>
+            {/* Public routes without notifications */}
             <Route
-              path="/laws"
+              path="/login"
               element={
-                <RoleRoute allowed={["Admin"]}>
-                  <LawManagement />
-                </RoleRoute>
-              }
-            />
-
-            <Route
-              path="/billing"
-              element={
-                <RoleRoute allowed={["Legal Unit"]}>
-                  <Billing />
-                </RoleRoute>
+                <PublicRoute restricted={true}>
+                  <Login />
+                </PublicRoute>
               }
             />
             <Route
-              path="/legal-reports"
+              path="/forgot-password"
               element={
-                <RoleRoute allowed={["Legal Unit"]}>
-                  <LegalReports />
-                </RoleRoute>
+                <PublicRoute>
+                  <ForgotPassword />
+                </PublicRoute>
               }
             />
             <Route
-              path="/division-reports"
+              path="/reset-password"
               element={
-                <RoleRoute allowed={["Division Chief"]}>
-                  <DivisionReports />
-                </RoleRoute>
+                <PublicRoute>
+                  <ResetPassword />
+                </PublicRoute>
               }
             />
             <Route
-              path="/help/editor"
+              path="/force-change-password"
               element={
-                <RoleRoute allowed={["Admin"]}>
-                  <HelpEditor />
-                </RoleRoute>
+                <PublicRoute>
+                  <ForceChangePassword />
+                </PublicRoute>
               }
             />
             <Route
-              path="/system-config"
-              element={
-                <RoleRoute allowed={["Admin"]}>
-                  <SystemConfiguration />
-                </RoleRoute>
-              }
-            />
-            <Route
-              path="/database-backup"
-              element={
-                <RoleRoute allowed={["Admin"]}>
-                  <DatabaseBackup />
-                </RoleRoute>
-              }
-            />
-            <Route
-              path="/audit-logs"
-              element={
-                <RoleRoute allowed={["Admin"]}>
-                  <AuditLogs />
-                </RoleRoute>
-              }
-            />
-            <Route
-              path="/reinspection-reminders"
-              element={
-                <RoleRoute allowed={["Division Chief"]}>
-                  <ReinspectionRemindersPage />
-                </RoleRoute>
-              }
-            />
-            <Route
-              path="/section-reports"
-              element={
-                <RoleRoute allowed={["Section Chief"]}>
-                  <SectionReports />
-                </RoleRoute>
-              }
-            />
-            <Route
-              path="/unit-reports"
-              element={
-                <RoleRoute allowed={["Unit Head"]}>
-                  <UnitReports />
-                </RoleRoute>
-              }
-            />
-            <Route
-              path="/monitoring-reports"
-              element={
-                <RoleRoute allowed={["Monitoring Personnel"]}>
-                  <MonitoringReports />
-                </RoleRoute>
-              }
-            />
-            <Route
-              path="/admin-reports"
-              element={
-                <RoleRoute allowed={["Admin"]}>
-                  <AdminReports />
-                </RoleRoute>
-              }
-            />
-            <Route
-              path="/reports"
+              path="/change-password"
               element={
                 <PrivateRoute>
-                  <Reports />
+                  <ChangePassword />
                 </PrivateRoute>
               }
             />
-          </Route>
 
-          {/* 404 Not Found - Catch all undefined routes */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+            {/* Protected routes with notifications */}
+            <Route
+              path="/"
+              element={
+                <PrivateRoute>
+                  <Layout />
+                </PrivateRoute>
+              }
+            >
+              <Route index element={<Dashboard />} />
+              <Route path="/users" element={<Users />} />
+              <Route path="/map" element={<Map />} />
+              <Route path="/establishments" element={<Establishments />} />
+              <Route path="/inspections" element={<Inspections />} />
+              <Route
+                path="/inspections/:id/view"
+                element={<InspectionView />}
+              />
+              <Route
+                path="/inspections/:id/form"
+                element={<InspectionForm />}
+              />
+              <Route
+                path="/inspections/:id/review"
+                element={<InspectionReviewPage />}
+              />
+              <Route
+                path="/inspections/:id/report-view"
+                element={<InspectionReportViewPage />}
+              />
+              <Route path="/debug-actions" element={<DebugActions />} />
+
+              <Route
+                path="/laws"
+                element={
+                  <RoleRoute allowed={["Admin"]}>
+                    <LawManagement />
+                  </RoleRoute>
+                }
+              />
+
+              <Route
+                path="/billing"
+                element={
+                  <RoleRoute allowed={["Legal Unit"]}>
+                    <Billing />
+                  </RoleRoute>
+                }
+              />
+              <Route
+                path="/help/editor"
+                element={
+                  <RoleRoute allowed={["Admin"]}>
+                    <HelpEditor />
+                  </RoleRoute>
+                }
+              />
+              <Route
+                path="/database-backup"
+                element={
+                  <RoleRoute allowed={["Admin"]}>
+                    <DatabaseBackup />
+                  </RoleRoute>
+                }
+              />
+              <Route
+                path="/audit-logs"
+                element={
+                  <RoleRoute allowed={["Admin"]}>
+                    <AuditLogs />
+                  </RoleRoute>
+                }
+              />
+              <Route
+                path="/reinspection-reminders"
+                element={
+                  <RoleRoute allowed={["Division Chief"]}>
+                    <ReinspectionRemindersPage />
+                  </RoleRoute>
+                }
+              />
+              <Route
+                path="/reports"
+                element={
+                  <PrivateRoute>
+                    <Reports />
+                  </PrivateRoute>
+                }
+              />
+            </Route>
+
+            {/* 404 Not Found - Catch all undefined routes */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
         </SearchProvider>
       </AuthProvider>
     </BrowserRouter>

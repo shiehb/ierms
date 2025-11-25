@@ -2,7 +2,7 @@ import { useState } from "react";
 import { mockApi } from "../../services/mockApi";
 import BillingReportPDF from "./BillingReportPDF";
 import ExportDropdown from "../ExportDropdown";
-import { useNotifications } from "../NotificationManager";
+import { useNotifications } from "../../hooks/useNotifications";
 
 export default function InspectionReportView({
   report,
@@ -34,13 +34,10 @@ export default function InspectionReportView({
       const selected = violations.filter((v) => v.selected && v.amount);
       const bill = await mockApi.createBillingFromReport(report.id, selected);
       setBilling(bill);
-      notifications.success(
-        "Billing report created!",
-        {
-          title: "Billing Created",
-          duration: 4000
-        }
-      );
+      notifications.success("Billing report created!", {
+        title: "Billing Created",
+        duration: 4000,
+      });
       onBillingCreated();
     } catch (err) {
       console.error("Error creating billing:", err);
@@ -48,7 +45,6 @@ export default function InspectionReportView({
       setLoading(false);
     }
   };
-
 
   return (
     <div className="p-4 bg-white rounded shadow">
@@ -68,7 +64,7 @@ export default function InspectionReportView({
             v.code || "N/A",
             v.law || "N/A",
             v.description || "N/A",
-            v.status || "N/A"
+            v.status || "N/A",
           ])}
         />
       </div>
@@ -107,7 +103,9 @@ export default function InspectionReportView({
       <table className="w-full mb-4 border border-gray-300 rounded-lg">
         <thead>
           <tr className="text-xs text-left text-white bg-gradient-to-r from-sky-600 to-sky-700">
-            <th className="w-6 px-3 py-2 text-center border-b border-gray-300">Select</th>
+            <th className="w-6 px-3 py-2 text-center border-b border-gray-300">
+              Select
+            </th>
             <th className="px-3 py-2 border-b border-gray-300">Violation</th>
             <th className="px-3 py-2 border-b border-gray-300">Law</th>
             <th className="px-3 py-2 border-b border-gray-300">Description</th>
@@ -116,7 +114,10 @@ export default function InspectionReportView({
         </thead>
         <tbody>
           {violations.map((v) => (
-            <tr key={v.id} className="text-xs border-b border-gray-300 hover:bg-gray-50 transition-colors">
+            <tr
+              key={v.id}
+              className="text-xs border-b border-gray-300 hover:bg-gray-50 transition-colors"
+            >
               <td className="px-3 py-2 text-center border-b border-gray-300">
                 <input
                   type="checkbox"
@@ -125,9 +126,13 @@ export default function InspectionReportView({
                   className="h-4 w-4 text-sky-600 focus:ring-sky-500 border-gray-300 rounded"
                 />
               </td>
-              <td className="px-3 py-2 border-b border-gray-300">{v.code || "N/A"}</td>
+              <td className="px-3 py-2 border-b border-gray-300">
+                {v.code || "N/A"}
+              </td>
               <td className="px-3 py-2 border-b border-gray-300">{v.law}</td>
-              <td className="px-3 py-2 border-b border-gray-300">{v.description}</td>
+              <td className="px-3 py-2 border-b border-gray-300">
+                {v.description}
+              </td>
               <td className="px-3 py-2 border-b border-gray-300">
                 <input
                   type="number"
@@ -165,7 +170,6 @@ export default function InspectionReportView({
           </div>
         </div>
       )}
-
     </div>
   );
 }
