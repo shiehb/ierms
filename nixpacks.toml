@@ -8,15 +8,15 @@ cmds = [
 cmds = [
   "python3 -m venv /opt/venv",
   ". /opt/venv/bin/activate && python3 -m pip install --upgrade pip",
-  ". /opt/venv/bin/activate && python3 -m pip install -r /app/server/requirements.txt",
+  ". /opt/venv/bin/activate && python3 -m pip install -r server/requirements.txt",
   "npm ci",
 ]
 
 [phases.build]
 cmds = [
   "npm run build",
-  ". /opt/venv/bin/activate && cd /app/server && python3 manage.py collectstatic --noinput",
+  ". /opt/venv/bin/activate && cd server && python3 manage.py collectstatic --noinput",
 ]
 
 [start]
-cmd = "cd /app/server && . /opt/venv/bin/activate && python manage.py migrate && /opt/venv/bin/gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 2 --timeout 120"
+cmd = "ls -la && cd /app/server && . /opt/venv/bin/activate && python manage.py migrate && /opt/venv/bin/gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 2 --timeout 120"
