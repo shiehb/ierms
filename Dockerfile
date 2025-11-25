@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 
-# Install Node.js
+# Install Node.js 20
 RUN apt-get update && apt-get install -y curl \
     && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
@@ -22,11 +22,8 @@ RUN npm run build
 # Collect static files
 RUN python server/manage.py collectstatic --noinput
 
-# Copy and setup start script
-COPY start.sh /app/start.sh
-RUN chmod +x /app/start.sh
-
+# Final working directory
 WORKDIR /app/server
 
-# Use the start script
-CMD ["/app/start.sh"]
+# Simple CMD without any cd commands
+CMD ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2", "--threads", "2", "--timeout", "120"]
