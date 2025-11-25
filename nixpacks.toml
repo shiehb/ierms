@@ -1,21 +1,22 @@
 [phases.setup]
 cmds = [
   "curl -fsSL https://deb.nodesource.com/setup_20.x | bash -",
-  "apt-get update && apt-get install -y nodejs python3-pip",
+  "apt-get update && apt-get install -y nodejs python3-pip python3-venv",
 ]
 
 [phases.install]
 cmds = [
-  "python3 -m pip install --upgrade pip",
-  "python3 -m pip install -r server/requirements.txt",
+  "python3 -m venv /opt/venv",
+  ". /opt/venv/bin/activate && python3 -m pip install --upgrade pip",
+  ". /opt/venv/bin/activate && python3 -m pip install -r server/requirements.txt",
   "npm ci",
 ]
 
 [phases.build]
 cmds = [
   "npm run build",
-  "cd server && python3 manage.py collectstatic --noinput",
+  ". /opt/venv/bin/activate && cd server && python3 manage.py collectstatic --noinput",
 ]
 
 [start]
-cmd = "cd server && python3 -m gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 2 --timeout 120"
+cmd = "cd server && /opt/venv/bin/gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 2 --timeout 120"
