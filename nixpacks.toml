@@ -31,4 +31,4 @@ cmds = [
 ]
 
 [start]
-cmd = "pwd && ls -la && . /opt/venv/bin/activate && cd server && python manage.py migrate && /opt/venv/bin/gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 2 --timeout 120"
+cmd = "cd /app/server && . /opt/venv/bin/activate && python manage.py migrate && /opt/venv/bin/gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 2 --timeout 120"
