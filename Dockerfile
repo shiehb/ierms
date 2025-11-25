@@ -1,38 +1,30 @@
 FROM python:3.11-slim
 
-# Install Node.js (use a compatible version)
+# Install Node.js 20 (compatible with your Vite requirements)
 RUN apt-get update && apt-get install -y \
     curl \
     ca-certificates \
-    xz-utils \
-    && curl -fsSL https://nodejs.org/dist/v20.18.0/node-v20.18.0-linux-x64.tar.xz -o node.tar.xz \
-    && tar -xJf node.tar.xz -C /usr/local --strip-components=1 \
-    && rm node.tar.xz \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy and install Python dependencies
+# Install Python dependencies first
 COPY server/requirements.txt .
 RUN pip install --upgrade pip setuptools wheel && \
     pip install -r requirements.txt
 
-# Copy and install Node.js dependencies
+# Install Node.js dependencies and build
 COPY package.json package-lock.json* ./
 RUN npm install
-
-# Copy application code
 COPY . .
-
-# Build frontend
 RUN npm run build
 
-# Collect static files - FIXED: Use absolute path instead of cd
-RUN python server/manage.py collectstatic --noinput
-
-# Set final working directory
+# Collect static files
 WORKDIR /app/server
+RUN python manage.py collectstatic --noinput
 
-# Use shell form for CMD to handle environment variables
+# Final CMD - use shell form
 CMD gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 2 --timeout 120
