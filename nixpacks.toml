@@ -1,12 +1,15 @@
+[providers.python]
+version = "3.11.9"
+
 [phases.setup]
 cmds = [
   "curl -fsSL https://deb.nodesource.com/setup_20.x | bash -",
-  "apt-get update && apt-get install -y nodejs",
+  "apt-get update && apt-get install -y nodejs python3-pip",
 ]
 
 [phases.install]
 cmds = [
-  "pip install -r server/requirements.txt",
+  "pip3 install -r server/requirements.txt",
   "npm ci",
 ]
 
