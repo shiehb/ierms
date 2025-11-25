@@ -18,5 +18,17 @@ cmds = [
   ". /opt/venv/bin/activate && cd server && python3 manage.py collectstatic --noinput",
 ]
 
+# Add a debug phase to see the directory structure
+[phases.final]
+cmds = [
+  "echo '=== Final directory structure ==='",
+  "pwd",
+  "ls -la",
+  "echo '=== Server directory contents ==='",
+  "ls -la server/",
+  "echo '=== Virtual environment check ==='",
+  "ls -la /opt/venv/bin/gunicorn"
+]
+
 [start]
-cmd = "ls -la && cd /app/server && . /opt/venv/bin/activate && python manage.py migrate && /opt/venv/bin/gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 2 --timeout 120"
+cmd = "pwd && ls -la && . /opt/venv/bin/activate && cd server && python manage.py migrate && /opt/venv/bin/gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 2 --timeout 120"
