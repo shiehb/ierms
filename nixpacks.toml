@@ -1,18 +1,20 @@
 [phases.setup]
-nixPkgs = ["python311Full", "nodejs_18"]
+cmds = [
+  "curl -fsSL https://deb.nodesource.com/setup_20.x | bash -",
+  "apt-get update && apt-get install -y nodejs",
+]
 
 [phases.install]
 cmds = [
-  "cd server && python3 -m pip install --upgrade pip setuptools wheel",
-  "cd server && python3 -m pip install -r requirements.txt",
-  "npm install",
+  "pip install -r server/requirements.txt",
+  "npm ci",
 ]
 
 [phases.build]
 cmds = [
   "npm run build",
+  "cd server && python manage.py collectstatic --noinput",
 ]
 
 [start]
 cmd = "cd server && gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 2 --timeout 120"
-
