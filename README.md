@@ -83,7 +83,7 @@ Build integrated_establishments_regulatory_management_system from the source and
 
 1. **Clone the repository:**
    ```sh
-   git clone https://github.com/shiehb/integrated_establishments_regulatory_management_system
+   git clone https://github.com/shiehb/ierms
    ```
 
 2. **Navigate to the project directory:**
