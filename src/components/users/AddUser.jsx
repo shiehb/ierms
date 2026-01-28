@@ -17,14 +17,6 @@ export default function AddUser({ onClose, onUserAdded }) {
   const [submitted, setSubmitted] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [emailValidation, setEmailValidation] = useState({
-    loading: true,
-    valid: false,
-    configured: false,
-    connectivity: false,
-    errors: [],
-    message: "",
-  });
   const [emailCheck, setEmailCheck] = useState({
     checking: false,
     exists: false,
@@ -51,53 +43,7 @@ export default function AddUser({ onClose, onUserAdded }) {
     return emailRegex.test(email.trim().toLowerCase());
   };
 
-  // Validate email configuration on mount
-  useEffect(() => {
-    const validateEmailConfig = async () => {
-      try {
-        const response = await api.get("system/config/validate-email/");
-        setEmailValidation({
-          loading: false,
-          ...response.data,
-        });
 
-        if (!response.data.valid) {
-          // Different notifications based on the issue
-          if (!response.data.configured) {
-            // Email not configured - show warning
-            notifications.warning(
-              "Email configuration is incomplete. Please configure email settings.",
-              {
-                title: "Email Configuration Required",
-                duration: 8000,
-              }
-            );
-          } else if (!response.data.connectivity) {
-            // Connectivity issue - show error
-            notifications.error(
-              "Cannot connect to email server. Please check your internet connection and try again.",
-              {
-                title: "Connection Error",
-                duration: 8000,
-              }
-            );
-          }
-        }
-      } catch (error) {
-        console.error("Email validation error:", error);
-        setEmailValidation({
-          loading: false,
-          valid: false,
-          configured: false,
-          connectivity: false,
-          errors: ["Failed to validate email configuration"],
-          message: "Email validation failed",
-        });
-      }
-    };
-
-    validateEmailConfig();
-  }, []);
 
   // Validate email format when email changes
   useEffect(() => {
@@ -380,39 +326,6 @@ export default function AddUser({ onClose, onUserAdded }) {
         Add User
       </h2>
 
-      {/* Email Configuration Warning Banner */}
-      {!emailValidation.loading && !emailValidation.valid && (
-        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-            <div className="flex-1">
-              <h3 className="font-semibold text-yellow-800 mb-1">
-                {!emailValidation.configured
-                  ? "Email Configuration Required"
-                  : "Connection Issue"}
-              </h3>
-              <p className="text-sm text-yellow-700 mb-2">
-                {emailValidation.message}
-              </p>
-              {emailValidation.errors.length > 0 && (
-                <ul className="text-xs text-yellow-600 space-y-1 mb-3">
-                  {emailValidation.errors.map((error, index) => (
-                    <li key={index}>• {error}</li>
-                  ))}
-                </ul>
-              )}
-              {/* Show link ONLY if email is not configured */}
-              {!emailValidation.configured && (
-                <p className="text-sm font-medium text-sky-600">
-                  Email configuration is required. Contact your system
-                  administrator.
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
       <form onSubmit={handleSubmit} className="space-y-5 text-sm">
         {/* Avatar Upload */}
         <div className="flex flex-col items-center mb-4">
@@ -588,19 +501,9 @@ export default function AddUser({ onClose, onUserAdded }) {
           </button>
           <button
             type="submit"
-            disabled={!emailValidation.valid || emailValidation.loading}
-            className={`flex-1 py-3 font-medium text-white transition rounded-lg ${
-              !emailValidation.valid || emailValidation.loading
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-sky-600 hover:bg-sky-700"
-            }`}
-            title={
-              !emailValidation.valid
-                ? "Please configure email settings first"
-                : ""
-            }
+            className="flex-1 py-3 font-medium text-white transition rounded-lg bg-sky-600 hover:bg-sky-700"
           >
-            {emailValidation.loading ? "Validating..." : "Save"}
+            Save
           </button>
         </div>
       </form>
